@@ -84,39 +84,44 @@ class TimetableGridEditor extends StatelessWidget {
   }
 
   Widget _buildPeriodRow(int period) {
-    return SizedBox(
-      height: 50,
-      child: Row(
-        children: [
-          // 节次标签
-          Container(
-            width: 50,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade50,
-              border: Border(right: BorderSide(color: Colors.grey.shade300)),
-            ),
-            child: Text(
-              '$period',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-            ),
-          ),
-          // 7天的格子
-          ...List.generate(7, (dayIndex) {
-            final dayOfWeek = dayIndex + 1;
-            return Expanded(
-              child: _TimetableCell(
-                period: period,
-                dayOfWeek: dayOfWeek,
-                courses: courses,
-                placedCourses: placedCourses,
-                onCourseDropped: onCourseDropped,
-                onCourseRemoved: onCourseRemoved,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SizedBox(
+          height: 50,
+          width: constraints.maxWidth,
+          child: Row(
+            children: [
+              // 节次标签
+              Container(
+                width: 50,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  border: Border(right: BorderSide(color: Colors.grey.shade300)),
+                ),
+                child: Text(
+                  '$period',
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                ),
               ),
-            );
-          }),
-        ],
-      ),
+              // 7天的格子
+              ...List.generate(7, (dayIndex) {
+                final dayOfWeek = dayIndex + 1;
+                return Expanded(
+                  child: _TimetableCell(
+                    period: period,
+                    dayOfWeek: dayOfWeek,
+                    courses: courses,
+                    placedCourses: placedCourses,
+                    onCourseDropped: onCourseDropped,
+                    onCourseRemoved: onCourseRemoved,
+                  ),
+                );
+              }),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -197,6 +202,7 @@ class _TimetableCell extends StatelessWidget {
 
   Widget _buildPlacedCourses(List<MapEntry<int, StructuredCourse>> placedHere) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: placedHere.map((entry) {
         final courseIndex = entry.key;
         final course = entry.value;

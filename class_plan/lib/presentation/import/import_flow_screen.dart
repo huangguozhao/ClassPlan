@@ -441,8 +441,8 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
         // 未放置的课程（可拖拽）
         if (unplacedIndices.isNotEmpty)
           Container(
-            height: 80,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            height: 100,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -457,14 +457,23 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
                     itemCount: unplacedIndices.length,
                     itemBuilder: (context, idx) {
                       final courseIndex = unplacedIndices[idx];
+                      if (courseIndex < 0 || courseIndex >= _parsedCourses.length) {
+                        return const SizedBox.shrink();
+                      }
                       final course = _parsedCourses[courseIndex];
+                      if (course == null) {
+                        return const SizedBox.shrink();
+                      }
                       return Padding(
                         padding: const EdgeInsets.only(right: 8),
-                        child: DraggableCourseCard(
-                          course: course,
-                          courseIndex: courseIndex,
-                          isPlaced: false,
-                          onTap: () => _openEditSheet(courseIndex, course),
+                        child: SizedBox(
+                          width: 150,
+                          child: DraggableCourseCard(
+                            course: course,
+                            courseIndex: courseIndex,
+                            isPlaced: false,
+                            onTap: () => _openEditSheet(courseIndex, course),
+                          ),
                         ),
                       );
                     },

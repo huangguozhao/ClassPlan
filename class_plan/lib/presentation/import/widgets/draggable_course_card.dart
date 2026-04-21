@@ -51,7 +51,7 @@ class DraggableCourseCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
         decoration: BoxDecoration(
           color: isPlaced ? Colors.grey.shade200 : Colors.blue.shade50,
           borderRadius: BorderRadius.circular(8),
@@ -82,26 +82,31 @@ class DraggableCourseCard extends StatelessWidget {
                   Icon(Icons.check_circle, size: 16, color: Colors.green.shade600),
               ],
             ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                if (course.teacher != null)
-                  Expanded(
-                    child: Text(
-                      course.teacher!,
-                      style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+            if (course.teacher != null || course.location != null) ...[
+              const SizedBox(height: 2),
+              Row(
+                children: [
+                  if (course.teacher != null)
+                    Expanded(
+                      child: Text(
+                        course.teacher!,
+                        style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                if (course.location != null)
-                  Text(
-                    course.location!,
-                    style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
-                    maxLines: 1,
-                  ),
-              ],
-            ),
+                  if (course.location != null)
+                    Flexible(
+                      child: Text(
+                        course.location!,
+                        style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
@@ -135,6 +140,7 @@ class DraggableCourseCard extends StatelessWidget {
               course.location!,
               style: TextStyle(fontSize: 11, color: Colors.blue.shade700),
               maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
         ],
       ),

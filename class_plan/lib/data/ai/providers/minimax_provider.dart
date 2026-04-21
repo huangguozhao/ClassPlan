@@ -45,16 +45,35 @@ class MiniMaxProvider extends AiProvider {
       throw Exception('MiniMax API 错误：${response.statusCode} ${response.body}');
     }
 
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
-    final choices = data['choices'] as List<dynamic>?;
-    if (choices == null || choices.isEmpty) {
-      // 调试：返回完整响应以便排查
+    Map<String, dynamic> data;
+    try {
+      data = jsonDecode(response.body) as Map<String, dynamic>;
+    } catch (e) {
+      throw Exception('MiniMax JSON 解析失败：$e，原始响应：${response.body}');
+    }
+
+    // 检查是否有 API 错误
+    if (data.containsKey('error')) {
+      throw Exception('MiniMax API 返回错误：${data['error']}');
+    }
+
+    final choices = data['choices'];
+    if (choices == null) {
+      throw Exception('MiniMax 返回空 choices，原始响应：${response.body}');
+    }
+    if (choices is! List) {
+      throw Exception('MiniMax choices 类型错误：${choices.runtimeType}，原始响应：${response.body}');
+    }
+    if (choices.isEmpty) {
       throw Exception('MiniMax 返回空结果，原始响应：${response.body}');
     }
+
     final firstChoice = choices.first;
     if (firstChoice is! Map) throw Exception('MiniMax 返回格式错误');
     final message = firstChoice['message'] as Map?;
-    if (message == null) throw Exception('MiniMax 返回格式错误');
-    return (message['content'] as String?) ?? '[]';
+    if (message == null) throw Exception('MiniMax message 为空');
+    final content = message['content'];
+    if (content == null) return '[]';
+    return content.toString();
   }
 }
