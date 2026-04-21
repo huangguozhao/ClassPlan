@@ -1,0 +1,10 @@
+@echo off
+echo y
+echo y
+echo y
+echo y
+echo y
+echo y
+echo y
+echo y
+D:\Buid\AndroidSDK\cmdline-tools\latest\bin\sdkmanager.bat --licenses

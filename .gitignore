@@ -1,0 +1,33 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+
+# Flutter/Dart
+.pub/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.dart_tool/
+build/
+android/app/build/
+android/.gradle/
+android/captures/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Local configuration
+*.local.yaml
+settings.local.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies
+fvm/
+.packages
+.pub-cache/
