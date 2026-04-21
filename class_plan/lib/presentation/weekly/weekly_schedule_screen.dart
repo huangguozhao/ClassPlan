@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../data/repository/local_course_repository.dart';
 import '../../di/app_module.dart';
 import '../../domain/model/course.dart';
+import '../import/course_edit_screen.dart';
 import 'weekly_schedule_state.dart';
 
 final weeklyScheduleProvider =
@@ -234,31 +235,41 @@ class _WeekScheduleGrid extends StatelessWidget {
     final textColor = isHeader ? Colors.black87 : Colors.black54;
 
     if (course != null) {
-      return Container(
-        width: width,
-        height: 44,
-        decoration: BoxDecoration(
-          color: _courseColor(course),
-          border: Border.all(color: Colors.white, width: 0.5),
-        ),
-        padding: const EdgeInsets.all(2),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              course.name,
-              style: const TextStyle(fontSize: 10, color: Colors.white),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+      return GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CourseEditScreen(course: course),
             ),
-            if (course.location != null)
+          );
+        },
+        child: Container(
+          width: width,
+          height: 44,
+          decoration: BoxDecoration(
+            color: _courseColor(course),
+            border: Border.all(color: Colors.white, width: 0.5),
+          ),
+          padding: const EdgeInsets.all(2),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
               Text(
-                course.location!,
-                style: const TextStyle(fontSize: 8, color: Colors.white70),
+                course.name,
+                style: const TextStyle(fontSize: 10, color: Colors.white),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-          ],
+              if (course.location != null)
+                Text(
+                  course.location!,
+                  style: const TextStyle(fontSize: 8, color: Colors.white70),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+            ],
+          ),
         ),
       );
     }
