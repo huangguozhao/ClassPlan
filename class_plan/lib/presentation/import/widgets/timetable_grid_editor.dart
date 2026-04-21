@@ -13,7 +13,7 @@ class TimetableGridEditor extends StatelessWidget {
   final Map<int, Map<String, int>> placedCourses;
 
   /// 课程被放置到网格时的回调
-  final void Function(int courseIndex, int dayOfWeek, int startPeriod) onCourseDropped;
+  final void Function(int courseIndex, int dayOfWeek, int startPeriod, int endPeriod) onCourseDropped;
 
   /// 被移除的课程索引（重新放回顶部）
   final void Function(int courseIndex)? onCourseRemoved;
@@ -127,7 +127,7 @@ class _TimetableCell extends StatelessWidget {
   final int dayOfWeek;
   final List<StructuredCourse> courses;
   final Map<int, Map<String, int>> placedCourses;
-  final void Function(int courseIndex, int dayOfWeek, int startPeriod) onCourseDropped;
+  final void Function(int courseIndex, int dayOfWeek, int startPeriod, int endPeriod) onCourseDropped;
   final void Function(int courseIndex)? onCourseRemoved;
 
   const _TimetableCell({
@@ -165,7 +165,12 @@ class _TimetableCell extends StatelessWidget {
       },
       onAcceptWithDetails: (details) {
         final courseIndex = details.data;
-        onCourseDropped(courseIndex, dayOfWeek, period);
+        // 获取原课程的时长（endPeriod - startPeriod + 1）
+        final course = courses[courseIndex];
+        final duration = (course.endPeriod ?? course.startPeriod ?? 1) - (course.startPeriod ?? 1) + 1;
+        // 拖拽放置时，endPeriod = startPeriod + duration - 1
+        final endPeriod = period + duration - 1;
+        onCourseDropped(courseIndex, dayOfWeek, period, endPeriod);
       },
       builder: (context, candidateData, rejectedData) {
         final isHovering = candidateData.isNotEmpty;

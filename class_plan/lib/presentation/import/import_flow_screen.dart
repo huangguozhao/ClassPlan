@@ -373,6 +373,48 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
         .where((i) => !_placedCourses.containsKey(i))
         .toList();
 
+    // AI 返回空结果时显示提示
+    if (_parsedCourses.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_off, size: 64, color: Colors.grey.shade400),
+            const SizedBox(height: 16),
+            const Text(
+              '未能识别到课程',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+                '可能是 AI 解析失败或课表格式无法识别。\n可以尝试切换到规则解析方式。',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+              ),
+            ),
+            const SizedBox(height: 24),
+            TextButton.icon(
+              onPressed: () {
+                setState(() {
+                  _useRuleParser = true; // 切换到规则解析
+                  _step = 0;
+                });
+              },
+              icon: const Icon(Icons.rule),
+              label: const Text('尝试规则解析'),
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: _retryParsing,
+              child: const Text('重新解析'),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Column(
       children: [
         // 顶部提示栏
@@ -460,11 +502,12 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
     );
   }
 
-  void _onCourseDropped(int courseIndex, int dayOfWeek, int startPeriod) {
+  void _onCourseDropped(int courseIndex, int dayOfWeek, int startPeriod, int endPeriod) {
     setState(() {
       _placedCourses[courseIndex] = {
         'dayOfWeek': dayOfWeek,
         'startPeriod': startPeriod,
+        'endPeriod': endPeriod,
       };
       // 清除编辑记录（拖拽优先）
       _editedCourses.remove(courseIndex);
@@ -568,7 +611,7 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
           location: sc.location,
           dayOfWeek: placed?['dayOfWeek'] ?? sc.dayOfWeek ?? 1,
           startPeriod: placed?['startPeriod'] ?? sc.startPeriod ?? 1,
-          endPeriod: placed?['startPeriod'] ?? sc.endPeriod ?? sc.startPeriod ?? 1,
+          endPeriod: placed?['endPeriod'] ?? sc.endPeriod ?? sc.startPeriod ?? 1,
           weekStart: sc.weekStart,
           weekEnd: sc.weekEnd,
           weeks: sc.weeks,
