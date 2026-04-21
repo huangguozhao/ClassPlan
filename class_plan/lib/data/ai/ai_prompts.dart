@@ -100,12 +100,12 @@ const courseTableParsingPrompt = '''
 - name: 课程名（必填）
 - teacher: 教师名（从"教师:"后提取）
 - location: 上课地点（从"场地:"后提取）
-- dayOfWeek: 1-7（如果无法确定则设为 null）
-- startPeriod: 1-12
-- endPeriod: 1-12
-- weekStart: 数字（如 1）
-- weekEnd: 数字（如 15）
-- weeks: [1,3,5] 表示单周，[2,4,6] 表示双周（可选）
+- dayOfWeek: 1-7（如果无法确定则设为 null，不要猜测）
 
 只返回JSON数组，不要任何其他文字。
+
+## 重要提醒
+
+1. **不要合并重复课程**：如果 PDF 中同一课程名出现多次（如在不同行），每行都解析为独立的课程条目。即使课程名、教师、地点都相同，也要保留为独立的 JSON 对象。
+2. **dayOfWeek 不要猜测**：如果文本中无法确定星期几，dayOfWeek 设为 null，让用户在界面上拖拽选择。
 ''';
