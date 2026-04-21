@@ -9,8 +9,8 @@ import 'providers/minimax_provider.dart';
 import 'providers/deepseek_provider.dart';
 import 'providers/chatgpt_provider.dart';
 
-/// AI 服务
-/// 统一管理所有 AI Provider 和用户配置
+/// AI service
+/// Manages all AI providers and user configuration
 class AiService {
   static final AiService _instance = AiService._();
   factory AiService() => _instance;
@@ -19,7 +19,7 @@ class AiService {
   late SharedPreferences _prefs;
   bool _initialized = false;
 
-  /// 所有注册的 Provider
+  /// All registered providers
   final Map<String, AiProvider> _providers = {
     'claude': ClaudeProvider(),
     'kimi': KIMIProvider(),
@@ -28,107 +28,153 @@ class AiService {
     'chatgpt': ChatGPTProvider(),
   };
 
-  /// 可用的 Provider 列表（供 UI 显示）
+  /// Available provider list (for UI display)
   List<AiProviderInfo> get availableProviders => [
     AiProviderInfo(
       id: 'claude',
       name: 'Claude',
-      description: 'Anthropic 开发的 AI助手',
+      description: 'Anthropic AI assistant',
       requiresApiKey: true,
     ),
     AiProviderInfo(
       id: 'kimi',
       name: 'KIMI (Moonshot)',
-      description: '月之暗面开发的 AI助手',
+      description: 'Moonshot AI assistant',
       requiresApiKey: true,
     ),
     AiProviderInfo(
       id: 'minimax',
       name: 'MiniMax',
-      description: 'MiniMax 开发的 AI助手',
+      description: 'MiniMax AI assistant',
       requiresApiKey: true,
     ),
     AiProviderInfo(
       id: 'deepseek',
       name: 'DeepSeek',
-      description: '深度求索开发的 AI助手',
+      description: 'DeepSeek AI assistant',
       requiresApiKey: true,
     ),
     AiProviderInfo(
       id: 'chatgpt',
       name: 'ChatGPT (OpenAI)',
-      description: 'OpenAI 开发的 AI助手',
+      description: 'OpenAI ChatGPT',
       requiresApiKey: true,
     ),
   ];
 
-  /// 当前选择的 Provider ID
+  /// Current selected provider ID
   String get selectedProviderId => _prefs.getString('ai_selected_provider') ?? 'claude';
 
-  /// 获取当前 Provider
+  /// Get current provider
   AiProvider get selectedProvider {
     final id = selectedProviderId;
     return _providers[id] ?? _providers['claude']!;
   }
 
-  /// 获取某个 Provider 的 API Key
+  /// Get API key for a provider
   String? getApiKey(String providerId) {
     return _prefs.getString('ai_key_$providerId');
   }
 
-  /// 检查某个 Provider 是否已配置
+  /// Check if a provider is configured
   bool isProviderConfigured(String providerId) {
     final key = getApiKey(providerId);
     return key != null && key.isNotEmpty;
   }
 
-  /// 检查当前选择的 Provider 是否已配置
+  /// Check if current provider is configured
   bool get isCurrentProviderConfigured {
     return isProviderConfigured(selectedProviderId);
   }
 
-  /// 初始化
+  /// Initialize
   Future<void> initialize() async {
     if (_initialized) return;
     _prefs = await SharedPreferences.getInstance();
     _initialized = true;
   }
 
-  /// 设置 API Key
+  /// Set API key
   Future<void> setApiKey(String providerId, String apiKey) async {
     await _prefs.setString('ai_key_$providerId', apiKey);
   }
 
-  /// 删除 API Key
+  /// Remove API key
   Future<void> removeApiKey(String providerId) async {
     await _prefs.remove('ai_key_$providerId');
   }
 
-  /// 选择 Provider
+  /// Select provider
   Future<void> selectProvider(String providerId) async {
     await _prefs.setString('ai_selected_provider', providerId);
   }
 
-  /// 使用当前选择的 Provider 解析课表
+  /// Parse schedule using current provider, fallback to other configured providers on failure
   Future<List<StructuredCourse>> parse(RawScheduleData raw) async {
-    final provider = selectedProvider;
-    final apiKey = getApiKey(selectedProviderId);
+    // Get all configured providers in priority order
+    final providers = _getConfiguredProvidersInOrder();
 
-    if (apiKey == null || apiKey.isEmpty) {
-      throw Exception('未配置 ${provider.name} 的 API Key，请在设置中配置');
+    if (providers.isEmpty) {
+      throw Exception('No AI provider configured');
     }
 
-    try {
-      final response = await provider.callApi(raw.rawText, apiKey);
-      return provider.parseJsonResponse(response);
-    } catch (e) {
-      // 重新抛出，保留原始堆栈
-      rethrow;
+    Exception? lastError;
+    final triedProviders = <String>[];
+
+    for (final config in providers) {
+      triedProviders.add(config.provider.name);
+
+      try {
+        final response = await config.provider.callApi(raw.rawText, config.apiKey);
+        final result = config.provider.parseJsonResponse(response);
+        if (result.isNotEmpty) {
+          // Success
+          return result;
+        }
+        // Empty result, try next provider
+        lastError = Exception('${config.provider.name} returned empty result');
+      } catch (e) {
+        lastError = Exception('${config.provider.name} failed: $e');
+        // Continue to next provider
+      }
     }
+
+    // All providers failed
+    final triedNames = triedProviders.join(', ');
+    throw Exception('All AI providers failed. Tried: $triedNames. Last error: $lastError');
+  }
+
+  /// Get configured providers in priority order
+  List<_ProviderConfig> _getConfiguredProvidersInOrder() {
+    final result = <_ProviderConfig>[];
+
+    // Add current selected provider first
+    final currentId = selectedProviderId;
+    if (isProviderConfigured(currentId)) {
+      result.add(_ProviderConfig(currentId, selectedProvider, getApiKey(currentId)!));
+    }
+
+    // Add other configured providers
+    for (final id in _providers.keys) {
+      if (id != currentId && isProviderConfigured(id)) {
+        result.add(_ProviderConfig(id, _providers[id]!, getApiKey(id)!));
+      }
+    }
+
+    return result;
   }
 }
 
-/// Provider 信息（供 UI 显示）
+/// Provider configuration
+class _ProviderConfig {
+  final String id;
+  final AiProvider provider;
+  final String apiKey;
+
+  _ProviderConfig(this.id, this.provider, this.apiKey);
+}
+
+/// Provider info (for UI display)
 class AiProviderInfo {
   final String id;
   final String name;
