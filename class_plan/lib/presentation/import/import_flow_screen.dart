@@ -14,6 +14,8 @@ import '../../domain/parser/rule/rule_based_parser.dart';
 import '../../di/app_module.dart';
 import 'ai_settings_screen.dart';
 import 'widgets/parsed_course_edit_sheet.dart';
+import 'widgets/draggable_course_card.dart';
+import 'widgets/timetable_grid_editor.dart';
 
 /// 导入流程屏幕
 /// 支持 PDF 和图片 OCR 的完整导入流程
@@ -38,6 +40,9 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
 
   // 追踪用户编辑过的课程
   final Map<int, StructuredCourse> _editedCourses = {};
+
+  // 拖拽放置的课程：courseIndex -> (dayOfWeek, startPeriod)
+  final Map<int, Map<String, int>> _placedCourses = {};
 
   final _ruleParser = RuleBasedParser();
   AiService? _aiService;
@@ -363,20 +368,27 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
   }
 
   Widget _buildConfirmation() {
+    // 获取未放置的课程（不在 _placedCourses 中的课程）
+    final unplacedIndices = List.generate(_parsedCourses.length, (i) => i)
+        .where((i) => !_placedCourses.containsKey(i))
+        .toList();
+
     return Column(
       children: [
+        // 顶部提示栏
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(12),
           color: Colors.blue.shade50,
           child: Row(
             children: [
-              Icon(Icons.check_circle, color: Colors.green.shade600),
+              Icon(Icons.check_circle, color: Colors.green.shade600, size: 20),
               const SizedBox(width: 8),
-              Text(
-                '解析完成，共 ${_parsedCourses.length} 门课程',
-                style: const TextStyle(fontWeight: FontWeight.w600),
+              Expanded(
+                child: Text(
+                  '解析完成 ${_parsedCourses.length} 门课程，已放置 ${_placedCourses.length} 门',
+                  style: const TextStyle(fontSize: 13),
+                ),
               ),
-              const Spacer(),
               TextButton(
                 onPressed: _retryParsing,
                 child: const Text('重新解析'),
@@ -384,37 +396,51 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
             ],
           ),
         ),
-        Expanded(
-          child: _parsedCourses.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.warning_amber, size: 64, color: Colors.orange.shade400),
-                      const SizedBox(height: 16),
-                      const Text('未能识别到课程'),
-                      const SizedBox(height: 8),
-                      const Text(
-                        '可以尝试切换解析方式或选择其他 AI',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _parsedCourses.length,
-                  itemBuilder: (context, index) {
-                    final effective = _getEffectiveCourse(index);
-                    final isEdited = _editedCourses.containsKey(index);
-                    return _ParsedCourseCard(
-                      course: effective,
-                      isEdited: isEdited,
-                      onTap: () => _openEditSheet(index, effective),
-                    );
-                  },
+        // 未放置的课程（可拖拽）
+        if (unplacedIndices.isNotEmpty)
+          Container(
+            height: 80,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '拖拽课程到下方时间表',
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
+                const SizedBox(height: 4),
+                Expanded(
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: unplacedIndices.length,
+                    itemBuilder: (context, idx) {
+                      final courseIndex = unplacedIndices[idx];
+                      final course = _parsedCourses[courseIndex];
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: DraggableCourseCard(
+                          course: course,
+                          courseIndex: courseIndex,
+                          isPlaced: false,
+                          onTap: () => _openEditSheet(courseIndex, course),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        // 时间表网格编辑器
+        Expanded(
+          child: TimetableGridEditor(
+            courses: _parsedCourses,
+            placedCourses: _placedCourses,
+            onCourseDropped: _onCourseDropped,
+            onCourseRemoved: _onCourseRemoved,
+          ),
         ),
+        // 底部保存按钮
         SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -432,6 +458,23 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
         ),
       ],
     );
+  }
+
+  void _onCourseDropped(int courseIndex, int dayOfWeek, int startPeriod) {
+    setState(() {
+      _placedCourses[courseIndex] = {
+        'dayOfWeek': dayOfWeek,
+        'startPeriod': startPeriod,
+      };
+      // 清除编辑记录（拖拽优先）
+      _editedCourses.remove(courseIndex);
+    });
+  }
+
+  void _onCourseRemoved(int courseIndex) {
+    setState(() {
+      _placedCourses.remove(courseIndex);
+    });
   }
 
   Future<void> _pickFile() async {
@@ -500,7 +543,11 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
   }
 
   void _retryParsing() {
-    setState(() => _step = 0);
+    setState(() {
+      _step = 0;
+      _placedCourses.clear();
+      _editedCourses.clear();
+    });
   }
 
   Future<void> _saveCourses() async {
@@ -509,17 +556,19 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
     try {
       final repo = getIt<LocalCourseRepository>();
       final uuid = const Uuid();
-      // 使用有效课程（编辑后或原版）
+      // 使用有效课程（编辑后或原版）+ 拖拽放置的位置
       final courses = List.generate(_parsedCourses.length, (i) {
         final sc = _getEffectiveCourse(i);
+        final placed = _placedCourses[i];
+
         return Course(
           id: uuid.v4(),
           name: sc.name,
           teacher: sc.teacher,
           location: sc.location,
-          dayOfWeek: sc.dayOfWeek ?? 1,
-          startPeriod: sc.startPeriod ?? 1,
-          endPeriod: sc.endPeriod ?? sc.startPeriod ?? 1,
+          dayOfWeek: placed?['dayOfWeek'] ?? sc.dayOfWeek ?? 1,
+          startPeriod: placed?['startPeriod'] ?? sc.startPeriod ?? 1,
+          endPeriod: placed?['startPeriod'] ?? sc.endPeriod ?? sc.startPeriod ?? 1,
           weekStart: sc.weekStart,
           weekEnd: sc.weekEnd,
           weeks: sc.weeks,
