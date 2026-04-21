@@ -57,17 +57,42 @@ abstract class AiProvider {
 
     return (decoded).map((item) {
       if (item is! Map<String, dynamic>) return null;
-      final map = item;
+      final map = Map<String, dynamic>.from(item);
+
+      // 提取已知字段
+      final name = map['name'] as String? ?? '未知课程';
+      final teacher = _extractString(map, 'teacher');
+      final location = _extractString(map, 'location');
+      final dayOfWeek = _extractInt(map, 'dayOfWeek');
+      final startPeriod = _extractInt(map, 'startPeriod');
+      final endPeriod = _extractInt(map, 'endPeriod');
+      final weekStart = _extractInt(map, 'weekStart');
+      final weekEnd = _extractInt(map, 'weekEnd');
+      final weeks = _extractIntList(map, 'weeks');
+
+      // 移除已知字段，保留其余作为 extraData
+      final knownKeys = [
+        'name', 'teacher', 'location', 'dayOfWeek',
+        'startPeriod', 'endPeriod', 'weekStart', 'weekEnd', 'weeks'
+      ];
+      final extraData = <String, dynamic>{};
+      for (final entry in map.entries) {
+        if (!knownKeys.contains(entry.key)) {
+          extraData[entry.key] = entry.value;
+        }
+      }
+
       return StructuredCourse(
-        name: map['name'] as String? ?? '未知课程',
-        teacher: _extractString(map, 'teacher'),
-        location: _extractString(map, 'location'),
-        dayOfWeek: _extractInt(map, 'dayOfWeek'),
-        startPeriod: _extractInt(map, 'startPeriod'),
-        endPeriod: _extractInt(map, 'endPeriod'),
-        weekStart: _extractInt(map, 'weekStart'),
-        weekEnd: _extractInt(map, 'weekEnd'),
-        weeks: _extractIntList(map, 'weeks'),
+        name: name,
+        teacher: teacher,
+        location: location,
+        dayOfWeek: dayOfWeek,
+        startPeriod: startPeriod,
+        endPeriod: endPeriod,
+        weekStart: weekStart,
+        weekEnd: weekEnd,
+        weeks: weeks,
+        extraData: extraData.isNotEmpty ? extraData : null,
       );
     }).whereType<StructuredCourse>().toList();
   }

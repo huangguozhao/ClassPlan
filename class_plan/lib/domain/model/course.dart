@@ -13,6 +13,8 @@ class Course {
   final int? weekEnd;           // 结束周（如16）
   final List<int>? weeks;       // 具体周次列表（如[1,3,5]表示单周），若为null表示每周年年都有
   final String? colorHex;        // 课程颜色（用于UI区分）
+  /// AI 解析返回的额外原始数据，用于课程详情展示
+  final Map<String, dynamic>? extraData;
 
   Course({
     required this.id,
@@ -26,6 +28,7 @@ class Course {
     this.weekEnd,
     this.weeks,
     this.colorHex,
+    this.extraData,
   });
 
   /// 获取该课程在指定周是否上课
@@ -57,6 +60,7 @@ class Course {
     int? weekEnd,
     List<int>? weeks,
     String? colorHex,
+    Map<String, dynamic>? extraData,
   }) {
     return Course(
       id: id ?? this.id,
@@ -70,6 +74,7 @@ class Course {
       weekEnd: weekEnd ?? this.weekEnd,
       weeks: weeks ?? this.weeks,
       colorHex: colorHex ?? this.colorHex,
+      extraData: extraData ?? this.extraData,
     );
   }
 }

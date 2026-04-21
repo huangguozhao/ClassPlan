@@ -40,7 +40,8 @@ class DatabaseHelper {
         weekStart INTEGER,
         weekEnd INTEGER,
         weeks TEXT,
-        colorHex TEXT
+        colorHex TEXT,
+        extraData TEXT
       )
     ''');
 

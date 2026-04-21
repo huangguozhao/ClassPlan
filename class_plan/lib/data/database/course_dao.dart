@@ -86,6 +86,7 @@ class CourseDao {
       'weekEnd': course.weekEnd,
       'weeks': course.weeks != null ? jsonEncode(course.weeks) : null,
       'colorHex': course.colorHex,
+      'extraData': course.extraData != null ? jsonEncode(course.extraData) : null,
     };
   }
 
@@ -94,6 +95,11 @@ class CourseDao {
     if (map['weeks'] != null) {
       final weeksList = jsonDecode(map['weeks'] as String) as List<dynamic>;
       weeks = weeksList.cast<int>();
+    }
+
+    Map<String, dynamic>? extraData;
+    if (map['extraData'] != null) {
+      extraData = jsonDecode(map['extraData'] as String) as Map<String, dynamic>;
     }
 
     return Course(
@@ -108,6 +114,7 @@ class CourseDao {
       weekEnd: map['weekEnd'] as int?,
       weeks: weeks,
       colorHex: map['colorHex'] as String?,
+      extraData: extraData,
     );
   }
 }

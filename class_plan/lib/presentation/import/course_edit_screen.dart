@@ -208,6 +208,43 @@ class _CourseEditScreenState extends ConsumerState<CourseEditScreen> {
             ),
             const SizedBox(height: 24),
 
+            // AI 解析的原始数据
+            if (widget.course.extraData != null && widget.course.extraData!.isNotEmpty) ...[
+              const Text('AI 解析信息', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: widget.course.extraData!.entries.map((entry) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${entry.key}: ',
+                            style: TextStyle(fontSize: 13, color: Colors.grey.shade700, fontWeight: FontWeight.w500),
+                          ),
+                          Expanded(
+                            child: Text(
+                              entry.value.toString(),
+                              style: TextStyle(fontSize: 13, color: Colors.grey.shade900),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+
             const Text('课程颜色', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             Wrap(

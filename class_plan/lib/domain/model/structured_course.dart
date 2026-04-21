@@ -14,6 +14,8 @@ class StructuredCourse {
   final int? weekEnd;
   final List<int>? weeks;
   final String? colorHex;
+  /// AI 解析返回的额外原始数据，用于课程详情展示
+  final Map<String, dynamic>? extraData;
 
   StructuredCourse({
     required this.name,
@@ -26,6 +28,7 @@ class StructuredCourse {
     this.weekEnd,
     this.weeks,
     this.colorHex,
+    this.extraData,
   });
 
   /// 转换为领域模型 Course
@@ -42,6 +45,7 @@ class StructuredCourse {
       weekEnd: weekEnd,
       weeks: weeks,
       colorHex: colorHex,
+      extraData: extraData,
     );
   }
 }
