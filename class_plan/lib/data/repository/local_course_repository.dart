@@ -3,88 +3,103 @@ import 'package:uuid/uuid.dart';
 import '../../domain/model/course.dart';
 import '../../domain/model/semester.dart';
 import '../../domain/model/week_schedule.dart';
+import '../database/course_dao.dart';
 import 'course_change_notifier.dart';
 import 'course_repository.dart';
 
-/// 内存实现的课程仓库（Sprint 1 临时方案）
-/// 后续替换为 Room 数据库实现
-
+/// Local course repository with SQLite persistence
 class LocalCourseRepository implements CourseRepository {
-  final _courses = <Course>[];
-  final _semesters = <Semester>[];
-  Semester? _currentSemester;
+  final CourseDao _courseDao = CourseDao();
   final _uuid = const Uuid();
+
+  // In-memory cache
+  List<Course> _courses = [];
+  bool _initialized = false;
+
+  /// Initialize repository by loading data from database
+  Future<void> _ensureInitialized() async {
+    if (_initialized) return;
+    _courses = await _courseDao.getAll();
+    _initialized = true;
+  }
 
   @override
   Future<void> saveCourse(Course course) async {
+    await _ensureInitialized();
     final index = _courses.indexWhere((c) => c.id == course.id);
     if (index >= 0) {
       _courses[index] = course;
+      await _courseDao.update(course);
     } else {
       _courses.add(course);
+      await _courseDao.insert(course);
     }
     CourseChangeNotifier().notify();
   }
 
   @override
   Future<void> saveCourses(List<Course> courses) async {
+    await _ensureInitialized();
     for (final course in courses) {
-      // 生成新ID
+      // Generate new ID for each course
       final newCourse = course.copyWith(id: _uuid.v4());
       _courses.add(newCourse);
+      await _courseDao.insert(newCourse);
     }
     CourseChangeNotifier().notify();
   }
 
   @override
   Future<List<Course>> getAllCourses() async {
+    await _ensureInitialized();
     return List.from(_courses);
   }
 
   @override
   Future<List<Course>> getCoursesBySemester(String semesterId) async {
-    // TODO: Course 模型暂无 semesterId 字段，无法精确按学期筛选
-    // Sprint 1 临时方案：返回所有课程
-    // 正确实现需要课程和学期关联（需持久化层支持）
+    // TODO: Course model has no semesterId field, cannot filter precisely
+    // Sprint 1 temporary solution: return all courses
+    // Proper implementation requires course-semester relationship
+    await _ensureInitialized();
     return List.from(_courses);
   }
 
   @override
   Future<void> deleteCourse(String courseId) async {
+    await _ensureInitialized();
     _courses.removeWhere((c) => c.id == courseId);
+    await _courseDao.delete(courseId);
     CourseChangeNotifier().notify();
   }
 
   @override
   Future<void> clearAll() async {
     _courses.clear();
+    await _courseDao.deleteAll();
     CourseChangeNotifier().notify();
   }
 
   @override
   Future<void> saveSemester(Semester semester) async {
-    final index = _semesters.indexWhere((s) => s.id == semester.id);
-    if (index >= 0) {
-      _semesters[index] = semester;
-    } else {
-      _semesters.add(semester);
-    }
-    _currentSemester ??= semester;
-    CourseChangeNotifier().notify();
+    // TODO: Implement semester persistence
+    throw UnimplementedError('Semester persistence not yet implemented');
   }
 
   @override
   Future<Semester?> getCurrentSemester() async {
-    return _currentSemester;
+    // TODO: Implement semester persistence
+    return null;
   }
 
   @override
   Future<List<Semester>> getAllSemesters() async {
-    return List.from(_semesters);
+    // TODO: Implement semester persistence
+    return [];
   }
 
-  /// 生成指定周的课表
+  /// Generate week schedule for a specific week
   Future<WeekSchedule> getWeekSchedule(int weekNumber, Semester semester) async {
+    await _ensureInitialized();
     final weekStartDate = semester.dateOfWeek(weekNumber);
     final coursesByDay = <int, List<Course>>{};
 
@@ -93,7 +108,7 @@ class LocalCourseRepository implements CourseRepository {
         return course.dayOfWeek == day && course.isActiveInWeek(weekNumber);
       }).toList();
 
-      // 按开始节次排序
+      // Sort by start period
       dayCourses.sort((a, b) => a.startPeriod.compareTo(b.startPeriod));
       coursesByDay[day] = dayCourses;
     }
