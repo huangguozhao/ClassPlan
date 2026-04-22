@@ -36,7 +36,11 @@ class TimetableGridEditor extends StatelessWidget {
     return Column(
       children: [
         _buildHeaderRow(),
-        Expanded(child: _buildGrid(context)),
+        Expanded(
+          child: SingleChildScrollView(
+            child: _buildGrid(context),
+          ),
+        ),
       ],
     );
   }
@@ -82,16 +86,21 @@ class TimetableGridEditor extends StatelessWidget {
       builder: (context, constraints) {
         final availableWidth = constraints.maxWidth - periodLabelWidth;
         final dayColumnWidth = availableWidth / 7;
+        final gridHeight = periods.length * cellHeight;
 
-        return Stack(
-          children: [
-            // 背景网格
-            _buildGridBackground(dayColumnWidth),
-            // 放置的课程（跨行显示）
-            _buildPlacedCourses(dayColumnWidth),
-            // DragTarget 层
-            _buildDragTargets(dayColumnWidth),
-          ],
+        return SizedBox(
+          width: constraints.maxWidth,
+          height: gridHeight,
+          child: Stack(
+            children: [
+              // 背景网格
+              _buildGridBackground(dayColumnWidth),
+              // 放置的课程（跨行显示）
+              _buildPlacedCourses(dayColumnWidth),
+              // DragTarget 层
+              _buildDragTargets(dayColumnWidth),
+            ],
+          ),
         );
       },
     );
@@ -114,20 +123,13 @@ class TimetableGridEditor extends StatelessWidget {
                 child: Text('$period', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
               ),
               Expanded(
-                child: Row(
-                  children: List.generate(7, (dayIndex) {
-                    return Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          border: Border(
-                            right: BorderSide(color: Colors.grey.shade200, width: 0.5),
-                            bottom: BorderSide(color: Colors.grey.shade200, width: 0.5),
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border(
+                      bottom: BorderSide(color: Colors.grey.shade200, width: 0.5),
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -193,28 +195,25 @@ class TimetableGridEditor extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(4),
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Expanded(
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Text(
-                      course.name,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: duration >= 3 ? 2 : 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                    ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Text(
+                  course.name,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
                 ),
               ),
               if (duration >= 2 && course.location != null)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 2),
+                  padding: const EdgeInsets.only(top: 2),
                   child: Text(
                     course.location!,
                     style: const TextStyle(fontSize: 8, color: Colors.white70),
