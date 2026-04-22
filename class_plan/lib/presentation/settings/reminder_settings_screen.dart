@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/notification/notification_service.dart';
+import 'class_schedule_settings_screen.dart';
 
 /// 提醒设置页面
 class ReminderSettingsScreen extends ConsumerStatefulWidget {
@@ -89,6 +90,20 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
                   _saveSettings();
                 },
               ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.schedule),
+              title: const Text('课程时间表设置'),
+              subtitle: const Text('配置每节课的开始时间和时长'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ClassScheduleSettingsScreen(),
+                  ),
+                );
+              },
             ),
             const Divider(),
             Padding(

@@ -1,9 +1,13 @@
+import 'dart:convert';
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 
 import '../../domain/model/course.dart';
 import '../../domain/model/semester.dart';
+import '../../domain/model/class_schedule.dart';
 
 /// 课程提醒通知服务
 class ReminderService {
@@ -13,15 +17,19 @@ class ReminderService {
 
   final _notifications = FlutterLocalNotificationsPlugin();
   bool _initialized = false;
+  ClassSchedule _classSchedule = ClassSchedule.defaultSchedule();
 
   /// 记录每个课程的通知 ID（用于精确取消）
   final _courseNotificationIds = <String, List<int>>{};
+
+  static const _schedulePrefKey = 'class_schedule_config';
 
   /// 初始化通知服务
   Future<void> initialize() async {
     if (_initialized) return;
 
     tz.initializeTimeZones();
+    await _loadClassSchedule();
 
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosSettings = DarwinInitializationSettings(
@@ -37,6 +45,22 @@ class ReminderService {
 
     await _notifications.initialize(settings);
     _initialized = true;
+  }
+
+  /// 加载课程时间表配置
+  Future<void> _loadClassSchedule() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonStr = prefs.getString(_schedulePrefKey);
+    if (jsonStr != null) {
+      try {
+        final json = jsonDecode(jsonStr) as Map<String, dynamic>;
+        _classSchedule = ClassSchedule.fromJson(json);
+      } catch (_) {
+        _classSchedule = ClassSchedule.defaultSchedule();
+      }
+    } else {
+      _classSchedule = ClassSchedule.defaultSchedule();
+    }
   }
 
   /// 请求通知权限（Android 13+）
@@ -61,6 +85,10 @@ class ReminderService {
     // 先取消该课程的旧提醒
     await cancelCourseReminders(course.id);
 
+    // 获取课程开始时间
+    final periodTime = _classSchedule.getPeriodStartTime(course.startPeriod);
+    if (periodTime == null) return;
+
     // 计算下一次上课时间
     final now = DateTime.now();
     final currentWeek = semester.currentWeek() ?? 1;
@@ -73,15 +101,13 @@ class ReminderService {
       // dayOfWeek: 1=周一, 7=周日
       final courseDate = weekDate.add(Duration(days: course.dayOfWeek - 1));
 
-      // 假设每天第N节课的上课时间（简化计算）
-      // 实际上课时间应根据学校作息时间
-      final periodStartHour = _estimatePeriodHour(course.startPeriod);
+      // 使用配置的上课时间
       final courseDateTime = DateTime(
         courseDate.year,
         courseDate.month,
         courseDate.day,
-        periodStartHour,
-        0,
+        periodTime.hour,
+        periodTime.minute,
       );
 
       // 提醒时间
@@ -143,14 +169,8 @@ class ReminderService {
     _courseNotificationIds.clear();
   }
 
-  /// 估算某节课的大致上课时间（小时）
-  int _estimatePeriodHour(int period) {
-    // 假设上午8点开始第1节课，每节课45分钟，课间10分钟
-    // 这只是估算，实际应从学校作息时间表读取
-    const startHour = 8;
-    const periodDuration = 45;
-    const breakDuration = 10;
-    final totalMinutes = (period - 1) * (periodDuration + breakDuration) + startHour * 60;
-    return totalMinutes ~/ 60;
+  /// 重新加载课程时间表（供外部调用）
+  Future<void> reloadClassSchedule() async {
+    await _loadClassSchedule();
   }
 }

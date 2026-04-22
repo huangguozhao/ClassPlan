@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
@@ -248,9 +250,19 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     });
 
     try {
+      // 获取上次导出的目录作为默认打开目录
+      String? initialDir;
+      if (_lastBackupPath != null) {
+        final file = File(_lastBackupPath!);
+        if (file.existsSync()) {
+          initialDir = file.parent.path;
+        }
+      }
+
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['json'],
+        initialDirectory: initialDir,
       );
 
       if (result == null || result.files.single.path == null) {
