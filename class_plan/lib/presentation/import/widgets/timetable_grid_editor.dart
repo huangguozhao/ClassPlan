@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../domain/model/structured_course.dart';
-import 'draggable_course_card.dart';
 
 /// 时间表网格编辑器
 /// 用于在导入确认页面接收拖拽的课程并显示在对应位置
@@ -36,12 +35,8 @@ class TimetableGridEditor extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // 表头行：星期名称
         _buildHeaderRow(),
-        // 时间表网格（使用 Stack 实现课程跨行显示）
-        Expanded(
-          child: _buildGrid(context),
-        ),
+        Expanded(child: _buildGrid(context)),
       ],
     );
   }
@@ -55,61 +50,60 @@ class TimetableGridEditor extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // 左上角空白
           Container(
             width: periodLabelWidth,
             alignment: Alignment.center,
             child: Text('节次', style: TextStyle(fontSize: 12, color: Colors.grey.shade700)),
           ),
-          // 星期标题
-          ...List.generate(7, (index) {
-            return Expanded(
-              child: Container(
-                alignment: Alignment.center,
-                child: Text(
-                  dayNames[index],
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey.shade800),
-                ),
-              ),
-            );
-          }),
+          Expanded(child: _buildDayHeaders()),
         ],
       ),
+    );
+  }
+
+  Widget _buildDayHeaders() {
+    return Row(
+      children: List.generate(7, (index) {
+        return Expanded(
+          child: Container(
+            alignment: Alignment.center,
+            child: Text(
+              dayNames[index],
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey.shade800),
+            ),
+          ),
+        );
+      }),
     );
   }
 
   Widget _buildGrid(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        return SingleChildScrollView(
-          child: SizedBox(
-            height: periods.length * cellHeight,
-            width: constraints.maxWidth,
-            child: Stack(
-              children: [
-                // 背景网格（纯色格子）
-                _buildGridBackground(),
-                // 放置的课程卡片（使用 Positioned 实现跨行显示）
-                _buildPlacedCourses(),
-                // DragTarget 层（接收拖拽）
-                _buildDragTargets(),
-              ],
-            ),
-          ),
+        final availableWidth = constraints.maxWidth - periodLabelWidth;
+        final dayColumnWidth = availableWidth / 7;
+
+        return Stack(
+          children: [
+            // 背景网格
+            _buildGridBackground(dayColumnWidth),
+            // 放置的课程（跨行显示）
+            _buildPlacedCourses(dayColumnWidth),
+            // DragTarget 层
+            _buildDragTargets(dayColumnWidth),
+          ],
         );
       },
     );
   }
 
-  /// 背景网格（纯色格子，用于显示可放置区域）
-  Widget _buildGridBackground() {
+  Widget _buildGridBackground(double dayColumnWidth) {
     return Column(
       children: periods.map((period) {
         return SizedBox(
           height: cellHeight,
           child: Row(
             children: [
-              // 节次标签
               Container(
                 width: periodLabelWidth,
                 alignment: Alignment.center,
@@ -117,25 +111,25 @@ class TimetableGridEditor extends StatelessWidget {
                   color: Colors.grey.shade50,
                   border: Border(right: BorderSide(color: Colors.grey.shade300)),
                 ),
-                child: Text(
-                  '$period',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                child: Text('$period', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+              ),
+              Expanded(
+                child: Row(
+                  children: List.generate(7, (dayIndex) {
+                    return Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          border: Border(
+                            right: BorderSide(color: Colors.grey.shade200, width: 0.5),
+                            bottom: BorderSide(color: Colors.grey.shade200, width: 0.5),
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
                 ),
               ),
-              // 7天的格子
-              ...List.generate(7, (dayIndex) {
-                return Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border(
-                        right: BorderSide(color: Colors.grey.shade200, width: 0.5),
-                        bottom: BorderSide(color: Colors.grey.shade200, width: 0.5),
-                      ),
-                    ),
-                  ),
-                );
-              }),
             ],
           ),
         );
@@ -143,19 +137,7 @@ class TimetableGridEditor extends StatelessWidget {
     );
   }
 
-  /// 已放置的课程卡片（跨行显示）
-  Widget _buildPlacedCourses() {
-    // 按位置分组课程，用于处理同位置多课程（单周/双周）
-    final coursesByPosition = <String, List<MapEntry<int, StructuredCourse>>>{};
-    for (final entry in placedCourses.entries) {
-      final courseIndex = entry.key;
-      if (courseIndex >= courses.length) continue;
-      final course = courses[courseIndex];
-      final pos = entry.value;
-      final key = '${pos['dayOfWeek']}_${pos['startPeriod']}';
-      coursesByPosition.putIfAbsent(key, () => []).add(MapEntry(courseIndex, course));
-    }
-
+  Widget _buildPlacedCourses(double dayColumnWidth) {
     return Stack(
       children: placedCourses.entries.map((entry) {
         final courseIndex = entry.key;
@@ -168,127 +150,101 @@ class TimetableGridEditor extends StatelessWidget {
         final duration = endPeriod - startPeriod + 1;
 
         // 计算位置和大小
-        final left = periodLabelWidth + (dayOfWeek - 1) * _getDayColumnWidth();
-        final top = (startPeriod - 1) * cellHeight;
-        final width = _getDayColumnWidth() - 4;
-        final height = duration * cellHeight - 4;
+        final left = periodLabelWidth + (dayOfWeek - 1) * dayColumnWidth + 1;
+        final top = (startPeriod - 1) * cellHeight + 1;
+        final width = dayColumnWidth - 2;
+        final height = duration * cellHeight - 2;
 
         return Positioned(
           left: left,
           top: top,
           width: width,
           height: height,
-          child: _buildCourseCard(course, courseIndex, pos),
+          child: _buildCourseCard(course, courseIndex),
         );
       }).toList(),
     );
   }
 
-  double _getDayColumnWidth() {
-    // 动态计算每天列宽（基于可用宽度）
-    // 这里使用固定值，实际会根据屏幕宽度调整
-    return 70.0; // 后续会通过 LayoutBuilder 动态计算
-  }
-
-  /// 构建课程卡片
-  Widget _buildCourseCard(StructuredCourse course, int courseIndex, Map<String, int> pos) {
+  Widget _buildCourseCard(StructuredCourse course, int courseIndex) {
+    final pos = placedCourses[courseIndex]!;
+    final startPeriod = pos['startPeriod']!;
+    final endPeriod = pos['endPeriod']!;
+    final duration = endPeriod - startPeriod + 1;
     final isOddWeek = _isOddWeekCourse(course);
     final isEvenWeek = _isEvenWeekCourse(course);
+    final color = _courseColor(course, isOddWeek, isEvenWeek);
 
     return GestureDetector(
-      onLongPress: () {
-        onCourseRemoved?.call(courseIndex);
-      },
+      onLongPress: () => onCourseRemoved?.call(courseIndex),
       child: Container(
-        margin: const EdgeInsets.all(2),
         decoration: BoxDecoration(
-          color: _courseColor(course, isOddWeek, isEvenWeek),
-          borderRadius: BorderRadius.circular(4),
+          color: color,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: Colors.white, width: 2),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 2,
-              offset: const Offset(0, 1),
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: Center(
-          child: Text(
-            course.name,
-            style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.w500),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: Column(
+            children: [
+              Expanded(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Text(
+                      course.name,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: duration >= 3 ? 2 : 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ),
+              if (duration >= 2 && course.location != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 2),
+                  child: Text(
+                    course.location!,
+                    style: const TextStyle(fontSize: 8, color: Colors.white70),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  bool _isOddWeekCourse(StructuredCourse course) {
-    if (course.weeks == null || course.weeks!.isEmpty) return false;
-    // 如果所有周次都是奇数
-    return course.weeks!.every((w) => w % 2 == 1);
-  }
-
-  bool _isEvenWeekCourse(StructuredCourse course) {
-    if (course.weeks == null || course.weeks!.isEmpty) return false;
-    // 如果所有周次都是偶数
-    return course.weeks!.every((w) => w % 2 == 0);
-  }
-
-  Color _courseColor(StructuredCourse course, bool isOddWeek, bool isEvenWeek) {
-    if (course.colorHex != null) {
-      try {
-        final baseColor = Color(int.parse(course.colorHex!.replaceFirst('#', '0xFF')));
-        if (isOddWeek && isEvenWeek) {
-          // 两种周都有，不做特殊处理
-          return baseColor;
-        } else if (isEvenWeek) {
-          // 只在双周，略微深一些
-          return HSLColor.fromColor(baseColor).withLightness(
-            (HSLColor.fromColor(baseColor).lightness - 0.1).clamp(0.0, 1.0)
-          ).toColor();
-        }
-        return baseColor;
-      } catch (_) {}
-    }
-    final colors = [
-      Colors.blue,
-      Colors.green,
-      Colors.orange,
-      Colors.purple,
-      Colors.teal,
-      Colors.pink,
-      Colors.indigo,
-      Colors.amber,
-    ];
-    return colors[course.name.hashCode % colors.length];
-  }
-
-  /// DragTarget 层
-  Widget _buildDragTargets() {
+  Widget _buildDragTargets(double dayColumnWidth) {
     return Row(
       children: [
-        // 节次标签列（不可放置）
         SizedBox(width: periodLabelWidth),
-        // 7天的 DragTarget
         ...List.generate(7, (dayIndex) {
           final dayOfWeek = dayIndex + 1;
-          return Expanded(
-            child: SizedBox(
-              height: periods.length * cellHeight,
-              child: Stack(
-                children: periods.map((period) {
-                  return Positioned(
-                    top: (period - 1) * cellHeight,
-                    left: 0,
-                    right: 0,
-                    height: cellHeight,
-                    child: _buildDragTarget(dayOfWeek, period),
-                  );
-                }).toList(),
-              ),
+          return SizedBox(
+            width: dayColumnWidth,
+            child: Column(
+              children: periods.map((period) {
+                return SizedBox(
+                  height: cellHeight,
+                  child: _buildDragTarget(dayOfWeek, period),
+                );
+              }).toList(),
             ),
           );
         }),
@@ -311,9 +267,8 @@ class TimetableGridEditor extends StatelessWidget {
             final existingStart = pos['startPeriod']!;
             final existingEnd = pos['endPeriod']!;
             final newEnd = period + duration - 1;
-            // 检查是否重叠
             if (period <= existingEnd && newEnd >= existingStart) {
-              return false; // 时间冲突
+              return false;
             }
           }
         }
@@ -340,5 +295,34 @@ class TimetableGridEditor extends StatelessWidget {
         );
       },
     );
+  }
+
+  bool _isOddWeekCourse(StructuredCourse course) {
+    if (course.weeks == null || course.weeks!.isEmpty) return false;
+    return course.weeks!.every((w) => w % 2 == 1);
+  }
+
+  bool _isEvenWeekCourse(StructuredCourse course) {
+    if (course.weeks == null || course.weeks!.isEmpty) return false;
+    return course.weeks!.every((w) => w % 2 == 0);
+  }
+
+  Color _courseColor(StructuredCourse course, bool isOddWeek, bool isEvenWeek) {
+    if (course.colorHex != null) {
+      try {
+        final baseColor = Color(int.parse(course.colorHex!.replaceFirst('#', '0xFF')));
+        if (isEvenWeek) {
+          return HSLColor.fromColor(baseColor).withLightness(
+            (HSLColor.fromColor(baseColor).lightness - 0.1).clamp(0.0, 1.0)
+          ).toColor();
+        }
+        return baseColor;
+      } catch (_) {}
+    }
+    final colors = [
+      Colors.blue, Colors.green, Colors.orange, Colors.purple,
+      Colors.teal, Colors.pink, Colors.indigo, Colors.amber,
+    ];
+    return colors[course.name.hashCode % colors.length];
   }
 }

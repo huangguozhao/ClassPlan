@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:path/path.dart' as path;
 
 import '../../../domain/model/raw_schedule_data.dart';
 import '../course_importer.dart';
@@ -12,16 +13,27 @@ class ImageImporter implements CourseImporter {
 
   @override
   Future<RawScheduleData> import(String sourcePath) async {
+    if (sourcePath.isEmpty) {
+      throw Exception('未选择图片文件');
+    }
+
+    // 验证文件是否存在
     final file = File(sourcePath);
     if (!await file.exists()) {
       throw Exception('文件不存在：$sourcePath');
+    }
+
+    // 验证文件扩展名
+    final ext = path.extension(sourcePath).toLowerCase();
+    if (!['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'].contains(ext)) {
+      throw Exception('不支持的图片格式：$ext，请选择 JPG、PNG 等格式');
     }
 
     final text = await _recognizeText(sourcePath);
 
     return RawScheduleData(
       sourceType: 'image',
-      sourceName: sourcePath.split('/').last.split('\\').last,
+      sourceName: path.basename(sourcePath),
       rawText: text,
       extra: {'filePath': sourcePath},
     );
