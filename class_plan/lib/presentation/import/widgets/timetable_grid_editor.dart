@@ -17,12 +17,16 @@ class TimetableGridEditor extends StatelessWidget {
   /// 被移除的课程索引（重新放回顶部）
   final void Function(int courseIndex)? onCourseRemoved;
 
+  /// 点击已放置课程的回调（显示详情）
+  final void Function(int courseIndex)? onCourseTapped;
+
   const TimetableGridEditor({
     super.key,
     required this.courses,
     required this.placedCourses,
     required this.onCourseDropped,
     this.onCourseRemoved,
+    this.onCourseTapped,
   });
 
   static const dayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
@@ -93,12 +97,12 @@ class TimetableGridEditor extends StatelessWidget {
           height: gridHeight,
           child: Stack(
             children: [
-              // 背景网格
+              // 背景网格（最底层）
               _buildGridBackground(dayColumnWidth),
-              // 放置的课程（跨行显示）
-              _buildPlacedCourses(dayColumnWidth),
-              // DragTarget 层
+              // DragTarget 层（中间，接收拖拽事件）
               _buildDragTargets(dayColumnWidth),
+              // 放置的课程（最上层，显示在 DragTarget 之上）
+              _buildPlacedCourses(dayColumnWidth),
             ],
           ),
         );
@@ -178,6 +182,7 @@ class TimetableGridEditor extends StatelessWidget {
     final color = _courseColor(course, isOddWeek, isEvenWeek);
 
     return GestureDetector(
+      onTap: () => onCourseTapped?.call(courseIndex),
       onLongPress: () => onCourseRemoved?.call(courseIndex),
       child: Container(
         decoration: BoxDecoration(
@@ -252,6 +257,18 @@ class TimetableGridEditor extends StatelessWidget {
   }
 
   Widget _buildDragTarget(int dayOfWeek, int period) {
+    // 检查该格子是否被任何已放置的课程覆盖
+    for (final entry in placedCourses.entries) {
+      final pos = entry.value;
+      if (pos['dayOfWeek'] == dayOfWeek) {
+        final start = pos['startPeriod']!;
+        final end = pos['endPeriod']!;
+        if (period >= start && period <= end) {
+          return const SizedBox(); // 被课程覆盖的格子不显示拖拽目标
+        }
+      }
+    }
+
     return DragTarget<int>(
       onWillAcceptWithDetails: (details) {
         final courseIndex = details.data;

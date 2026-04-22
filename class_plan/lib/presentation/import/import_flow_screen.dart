@@ -489,6 +489,7 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
             placedCourses: _placedCourses,
             onCourseDropped: _onCourseDropped,
             onCourseRemoved: _onCourseRemoved,
+            onCourseTapped: _onCourseTapped,
           ),
         ),
         // 底部保存按钮
@@ -527,6 +528,55 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
     setState(() {
       _placedCourses.remove(courseIndex);
     });
+  }
+
+  void _onCourseTapped(int courseIndex) {
+    final course = _parsedCourses[courseIndex];
+    final pos = _placedCourses[courseIndex]!;
+    final dayOfWeek = pos['dayOfWeek']!;
+    final startPeriod = pos['startPeriod']!;
+    final endPeriod = pos['endPeriod']!;
+    final weeks = course.weeks != null ? course.weeks!.join(', ') : '未知';
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(course.name),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (course.teacher != null) _detailRow('教师', course.teacher!),
+            if (course.location != null) _detailRow('地点', course.location!),
+            _detailRow('星期', TimetableGridEditor.dayNames[dayOfWeek - 1]),
+            _detailRow('节次', '$startPeriod - $endPeriod'),
+            _detailRow('周次', weeks),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('关闭'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _detailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 60,
+            child: Text('$label:', style: const TextStyle(fontWeight: FontWeight.w500)),
+          ),
+          Expanded(child: Text(value)),
+        ],
+      ),
+    );
   }
 
   Future<void> _pickFile() async {
