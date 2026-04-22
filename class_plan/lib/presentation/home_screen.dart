@@ -9,6 +9,7 @@ import 'settings/semester_setup_screen.dart';
 import 'settings/course_management_screen.dart';
 import 'settings/backup_screen.dart';
 import 'settings/reminder_settings_screen.dart';
+import 'debug/debug_log_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -301,6 +302,19 @@ class SettingsScreen extends StatelessWidget {
             title: const Text('关于'),
             subtitle: const Text('版本 1.0.0'),
             onTap: () {},
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.bug_report),
+            title: const Text('调试日志'),
+            subtitle: const Text('查看应用日志'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const DebugLogScreen()),
+              );
+            },
           ),
         ],
       ),

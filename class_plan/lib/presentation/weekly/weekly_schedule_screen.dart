@@ -236,14 +236,7 @@ class _WeekScheduleGrid extends StatelessWidget {
 
     if (course != null) {
       return GestureDetector(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CourseEditScreen(course: course),
-            ),
-          );
-        },
+        onTap: () => _showCourseDetailDialog(context, course),
         child: Container(
           width: width,
           height: 44,
@@ -311,6 +304,127 @@ class _WeekScheduleGrid extends StatelessWidget {
       Colors.amber,
     ];
     return colors[course.name.hashCode % colors.length];
+  }
+
+  void _showCourseDetailDialog(BuildContext context, Course course) {
+    showDialog(
+      context: context,
+      builder: (context) => _CourseDetailDialog(course: course),
+    );
+  }
+}
+
+class _CourseDetailDialog extends StatelessWidget {
+  final Course course;
+
+  const _CourseDetailDialog({required this.course});
+
+  @override
+  Widget build(BuildContext context) {
+    final dayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+
+    return AlertDialog(
+      title: Text(course.name),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _DetailRow(icon: Icons.person, label: '教师', value: course.teacher),
+            _DetailRow(icon: Icons.location_on, label: '地点', value: course.location),
+            _DetailRow(
+              icon: Icons.calendar_today,
+              label: '时间',
+              value: course.dayOfWeek != null
+                  ? '${dayNames[course.dayOfWeek! - 1]} ${course.startPeriod}-${course.endPeriod}节'
+                  : '未知',
+            ),
+            _DetailRow(
+              icon: Icons.date_range,
+              label: '周次',
+              value: (course.weekStart != null && course.weekEnd != null)
+                  ? '第${course.weekStart}-${course.weekEnd}周'
+                  : (course.weekStart != null ? '第${course.weekStart}周起' : '未知'),
+            ),
+            if (course.weeks != null && course.weeks!.isNotEmpty)
+              _DetailRow(
+                icon: Icons.filter_list,
+                label: '单双周',
+                value: _getWeeksLabel(course.weeks!),
+              ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('关闭'),
+        ),
+        FilledButton.icon(
+          onPressed: () {
+            Navigator.pop(context); // 关闭弹窗
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CourseEditScreen(course: course),
+              ),
+            );
+          },
+          icon: const Icon(Icons.edit, size: 18),
+          label: const Text('编辑'),
+        ),
+      ],
+    );
+  }
+
+  String _getWeeksLabel(List<int> weeks) {
+    if (weeks.length <= 4) {
+      return weeks.map((w) => '第$w周').join('、');
+    }
+    // 如果太多，简化显示
+    final odd = weeks.where((w) => w % 2 == 1).toList();
+    final even = weeks.where((w) => w % 2 == 0).toList();
+    if (odd.length > even.length) {
+      return '单周 ${odd.length}门课';
+    } else if (even.length > odd.length) {
+      return '双周 ${even.length}门课';
+    }
+    return '${weeks.length}个周次';
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String? value;
+
+  const _DetailRow({
+    required this.icon,
+    required this.label,
+    this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: Colors.grey.shade600),
+          const SizedBox(width: 8),
+          Text(
+            '$label: ',
+            style: TextStyle(color: Colors.grey.shade600),
+          ),
+          Expanded(
+            child: Text(
+              value ?? '未设置',
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

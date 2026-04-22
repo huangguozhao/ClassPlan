@@ -8,6 +8,7 @@ import 'providers/kimi_provider.dart';
 import 'providers/minimax_provider.dart';
 import 'providers/deepseek_provider.dart';
 import 'providers/chatgpt_provider.dart';
+import '../../presentation/debug/debug_log_screen.dart';
 
 /// AI service
 /// Manages all AI providers and user configuration
@@ -123,10 +124,14 @@ class AiService {
 
     for (final config in providers) {
       triedProviders.add(config.provider.name);
+      DebugLogService().info('尝试使用 ${config.provider.name} 解析课表', tag: 'AI');
 
       try {
+        DebugLogService().debug('调用 API，输入文本长度: ${raw.rawText.length}', tag: 'AI');
         final response = await config.provider.callApi(raw.rawText, config.apiKey);
+        DebugLogService().debug('API 响应: ${response.substring(0, response.length > 200 ? 200 : response.length)}...', tag: 'AI');
         final result = config.provider.parseJsonResponse(response);
+        DebugLogService().info('${config.provider.name} 解析结果: ${result.length} 门课程', tag: 'AI');
         if (result.isNotEmpty) {
           // Success
           return result;
@@ -134,6 +139,7 @@ class AiService {
         // Empty result, try next provider
         lastError = Exception('${config.provider.name} returned empty result');
       } catch (e) {
+        DebugLogService().error('${config.provider.name} 解析失败: $e', tag: 'AI');
         lastError = Exception('${config.provider.name} failed: $e');
         // Continue to next provider
       }

@@ -531,9 +531,20 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
 
   Future<void> _pickFile() async {
     try {
+      final FileType type;
+      final List<String>? extensions;
+
+      if (widget.sourceType == 'pdf') {
+        type = FileType.custom;
+        extensions = ['pdf'];
+      } else {
+        type = FileType.custom;
+        extensions = ['jpg', 'jpeg', 'png'];
+      }
+
       final result = await FilePicker.platform.pickFiles(
-        type: widget.sourceType == 'pdf' ? FileType.custom : FileType.image,
-        allowedExtensions: widget.sourceType == 'pdf' ? ['pdf'] : ['jpg', 'jpeg', 'png'],
+        type: type,
+        allowedExtensions: extensions,
       );
 
       if (result != null && result.files.single.path != null) {

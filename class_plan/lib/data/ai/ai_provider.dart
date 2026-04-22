@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import '../../domain/model/raw_schedule_data.dart';
 import '../../domain/model/structured_course.dart';
+import '../../presentation/debug/debug_log_screen.dart';
 
 /// AI Provider 接口
 /// 所有 AI 提供者都实现此接口
@@ -47,7 +48,15 @@ abstract class AiProvider {
     try {
       decoded = jsonDecode(arrayStr);
     } on FormatException {
-      return [];
+      // JSON 格式有问题，尝试修复常见问题
+      final fixed = _fixJsonString(arrayStr);
+      try {
+        decoded = jsonDecode(fixed);
+      } catch (e) {
+        // 修复也失败了，返回空列表
+        DebugLogService().warning('JSON 解析失败，已修复仍失败: $e', tag: 'AI');
+        return [];
+      }
     } catch (e) {
       // 其他异常（如类型错误）也安全返回空列表
       return [];
@@ -126,5 +135,43 @@ abstract class AiProvider {
       }).whereType<int>().toList();
     }
     return null;
+  }
+
+  /// 修复常见的 JSON 格式问题
+  String _fixJsonString(String input) {
+    var result = input;
+
+    // 1. 将单引号替换为双引号（但要避开已经存在的双引号内容）
+    // 匹配 'key': 或 'value' 格式
+    result = result.replaceAllMapped(
+      RegExp(r"'([^'\\]*(?:\\.[^'\\]*)*)'"),
+      (m) {
+        final inner = m.group(1)!;
+        // 如果内容是数字、null、true、false，不加引号
+        if (inner == 'null' || inner == 'true' || inner == 'false' ||
+            RegExp(r'^-?\d+\.?\d*$').hasMatch(inner)) {
+          return inner;
+        }
+        return '"$inner"';
+      },
+    );
+
+    // 2. 修复 key 使用单引号的问题：将 'key' 转为 "key"
+    result = result.replaceAllMapped(
+      RegExp(r"'([^']+)':\s*"),
+      (m) => '"${m.group(1)}": ',
+    );
+
+    // 3. 修复缺少逗号的问题：在 } 或 ] 前添加逗号（如果后面是 { 或 [ 或 "）
+    result = result.replaceAllMapped(
+      RegExp(r'}(?=\s*[{["\w])'),
+      (m) => '},',
+    );
+
+    // 4. 修复尾部多余逗号
+    result = result.replaceAll(RegExp(r',\s*\]'), ']');
+    result = result.replaceAll(RegExp(r',\s*}'), '}');
+
+    return result;
   }
 }
