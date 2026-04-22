@@ -29,6 +29,7 @@ class _CourseEditScreenState extends ConsumerState<CourseEditScreen> {
   late int _endPeriod;
   int? _weekStart;
   int? _weekEnd;
+  String _weekType = 'all'; // 'all', 'odd', 'even'
   Color _selectedColor = Colors.blue;
   bool _isSaving = false;
 
@@ -51,6 +52,16 @@ class _CourseEditScreenState extends ConsumerState<CourseEditScreen> {
       try {
         _selectedColor = Color(int.parse(c.colorHex!.replaceFirst('#', '0xFF')));
       } catch (_) {}
+    }
+    // 根据 weeks 判断单双周类型
+    if (c.weeks != null && c.weeks!.isNotEmpty) {
+      if (c.weeks!.every((w) => w % 2 == 1)) {
+        _weekType = 'odd';
+      } else if (c.weeks!.every((w) => w % 2 == 0)) {
+        _weekType = 'even';
+      } else {
+        _weekType = 'all';
+      }
     }
   }
 
@@ -108,20 +119,32 @@ class _CourseEditScreenState extends ConsumerState<CourseEditScreen> {
 
             const Text('上课星期 *', style: TextStyle(fontSize: 12, color: Colors.grey)),
             const SizedBox(height: 8),
-            SegmentedButton<int>(
-              segments: const [
-                ButtonSegment(value: 1, label: Text('一')),
-                ButtonSegment(value: 2, label: Text('二')),
-                ButtonSegment(value: 3, label: Text('三')),
-                ButtonSegment(value: 4, label: Text('四')),
-                ButtonSegment(value: 5, label: Text('五')),
-                ButtonSegment(value: 6, label: Text('六')),
-                ButtonSegment(value: 7, label: Text('日')),
-              ],
-              selected: {_selectedDay},
-              onSelectionChanged: (set) {
-                setState(() => _selectedDay = set.first);
-              },
+            Row(
+              children: List.generate(7, (index) {
+                final day = index + 1;
+                final isSelected = _selectedDay == day;
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _selectedDay = day),
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 2),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: isSelected ? Theme.of(context).primaryColor : Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        ['一', '二', '三', '四', '五', '六', '日'][index],
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : Colors.black87,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
             ),
             const SizedBox(height: 24),
 
@@ -203,6 +226,31 @@ class _CourseEditScreenState extends ConsumerState<CourseEditScreen> {
                       ),
                     ],
                   ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            const Text('单双周', style: TextStyle(fontSize: 12, color: Colors.grey)),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                _WeekTypeChip(
+                  label: '全部周',
+                  isSelected: _weekType == 'all',
+                  onTap: () => setState(() => _weekType = 'all'),
+                ),
+                const SizedBox(width: 8),
+                _WeekTypeChip(
+                  label: '单周',
+                  isSelected: _weekType == 'odd',
+                  onTap: () => setState(() => _weekType = 'odd'),
+                ),
+                const SizedBox(width: 8),
+                _WeekTypeChip(
+                  label: '双周',
+                  isSelected: _weekType == 'even',
+                  onTap: () => setState(() => _weekType = 'even'),
                 ),
               ],
             ),
@@ -294,6 +342,18 @@ class _CourseEditScreenState extends ConsumerState<CourseEditScreen> {
       final repo = getIt<LocalCourseRepository>();
       final colorHex = '#${_selectedColor.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
 
+      // 根据单双周类型计算 weeks 列表
+      List<int>? weeks;
+      if (_weekType != 'all' && _weekStart != null && _weekEnd != null) {
+        final start = _weekStart!;
+        final end = _weekEnd!;
+        if (_weekType == 'odd') {
+          weeks = List.generate(((end - start) ~/ 2) + 1, (i) => start + i * 2);
+        } else if (_weekType == 'even') {
+          weeks = List.generate(((end - start) ~/ 2) + 1, (i) => start + 1 + i * 2);
+        }
+      }
+
       final updated = widget.course.copyWith(
         name: _nameController.text.trim(),
         teacher: _teacherController.text.trim().isEmpty ? null : _teacherController.text.trim(),
@@ -303,6 +363,7 @@ class _CourseEditScreenState extends ConsumerState<CourseEditScreen> {
         endPeriod: _endPeriod,
         weekStart: _weekStart,
         weekEnd: _weekEnd,
+        weeks: weeks,
         colorHex: colorHex,
       );
 
@@ -354,5 +415,38 @@ class _CourseEditScreenState extends ConsumerState<CourseEditScreen> {
         );
       }
     }
+  }
+}
+
+class _WeekTypeChip extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _WeekTypeChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? Theme.of(context).primaryColor : Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.black87,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ),
+    );
   }
 }

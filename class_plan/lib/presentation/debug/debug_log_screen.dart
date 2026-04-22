@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// 简单的内存日志服务，用于调试
 class DebugLogService {
@@ -74,9 +75,9 @@ class DebugLogScreen extends StatelessWidget {
                 final tag = e.tag ?? '';
                 return '[${e.timestamp.toIso8601String()}] [$level]${tag.isNotEmpty ? ' [$tag]' : ''}: ${e.message}';
               }).join('\n');
-              // Copy to clipboard would need clipboard package
+              Clipboard.setData(ClipboardData(text: text));
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('日志已复制')),
+                const SnackBar(content: Text('日志已复制到剪贴板')),
               );
             },
             tooltip: '复制日志',

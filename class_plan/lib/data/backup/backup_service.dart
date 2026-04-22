@@ -41,6 +41,20 @@ class BackupService {
     return file.path;
   }
 
+  /// 生成备份文件名
+  String generateBackupFileName() {
+    final dateStr = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+    return 'classplan_backup_$dateStr.json';
+  }
+
+  /// 保存到指定路径
+  Future<String> exportToPath(String filePath) async {
+    final json = await exportToJson();
+    final file = File(filePath);
+    await file.writeAsString(json);
+    return file.path;
+  }
+
   /// 从 JSON 字符串导入数据
   Future<void> importFromJson(String jsonStr) async {
     final data = jsonDecode(jsonStr) as Map<String, dynamic>;

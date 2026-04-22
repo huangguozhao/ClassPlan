@@ -182,7 +182,24 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     try {
       final repo = getIt<LocalCourseRepository>();
       final service = BackupService(repo);
-      final path = await service.exportToFile();
+
+      // 让用户选择保存位置
+      final result = await FilePicker.platform.saveFile(
+        dialogTitle: '选择备份保存位置',
+        fileName: service.generateBackupFileName(),
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+      );
+
+      String path;
+      if (result != null) {
+        // 用户选择了路径
+        path = await service.exportToPath(result);
+      } else {
+        // 用户取消，使用默认位置
+        path = await service.exportToFile();
+      }
+
       setState(() => _lastBackupPath = path);
 
       if (mounted) {
