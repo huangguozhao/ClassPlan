@@ -147,56 +147,69 @@ class _WeekScheduleGrid extends StatelessWidget {
 
   const _WeekScheduleGrid({required this.state});
 
-  @override
+@override
   Widget build(BuildContext context) {
     const dayNames = ['', '周一', '周二', '周三', '周四', '周五', '周六', '周日'];
     const periods = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+    const cellSpacing = 2.0;
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: SingleChildScrollView(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 节次列
-            Column(
-              children: [
-                _buildCell(context, '', isHeader: true, width: 40),
-                ...periods.map((p) => _buildCell(
-                      context,
-                      '$p',
-                      isHeader: false,
-                      width: 40,
-                      isPeriodCell: true,
-                    )),
-              ],
-            ),
-            // 周一~周日列
-            for (int day = 1; day <= 7; day++) ...[
+        child: Padding(
+          padding: const EdgeInsets.all(cellSpacing),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 节次列
               Column(
                 children: [
-                  _buildCell(
-                    context,
-                    dayNames[day],
-                    isHeader: true,
-                    width: 70,
-                    isToday: _isToday(day),
-                  ),
-                  ...periods.map((period) {
-                    final course = _findCourseAt(state, day, period);
-                    return _buildCell(
-                      context,
-                      course?.name ?? '',
-                      course: course,
-                      isHeader: false,
-                      width: 70,
-                      isToday: _isToday(day),
-                    );
-                  }),
+                  _buildCell(context, '', isHeader: true, width: 40),
+                  ...periods.map((p) => Padding(
+                        padding: const EdgeInsets.only(top: cellSpacing),
+                        child: _buildCell(
+                          context,
+                          '$p',
+                          isHeader: false,
+                          width: 40,
+                          isPeriodCell: true,
+                        ),
+                      )),
                 ],
               ),
+              // 周一~周日列
+              for (int day = 1; day <= 7; day++) ...[
+                Padding(
+                  padding: const EdgeInsets.only(left: cellSpacing),
+                  child: Column(
+                    children: [
+                      _buildCell(
+                        context,
+                        dayNames[day],
+                        isHeader: true,
+                        width: 75,
+                        isToday: _isToday(day),
+                      ),
+                      ...periods.map((period) {
+                        final course = _findCourseAt(state, day, period);
+                        return Padding(
+                          padding: const EdgeInsets.only(top: cellSpacing),
+                          child: _buildCell(
+                            context,
+                            course?.name ?? '',
+                            course: course,
+                            isHeader: false,
+                            width: 75,
+                            isToday: _isToday(day),
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -239,27 +252,30 @@ class _WeekScheduleGrid extends StatelessWidget {
         onTap: () => _showCourseDetailDialog(context, course),
         child: Container(
           width: width,
-          height: 44,
+          height: 50,
           decoration: BoxDecoration(
             color: _courseColor(course),
-            border: Border.all(color: Colors.white, width: 0.5),
+            borderRadius: BorderRadius.circular(4),
           ),
-          padding: const EdgeInsets.all(2),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
                 course.name,
-                style: const TextStyle(fontSize: 10, color: Colors.white),
+                style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w500),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              if (course.location != null)
-                Text(
-                  course.location!,
-                  style: const TextStyle(fontSize: 8, color: Colors.white70),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+              if (course.location != null && course.location!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(
+                    course.location!,
+                    style: const TextStyle(fontSize: 9, color: Colors.white70),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
             ],
           ),
