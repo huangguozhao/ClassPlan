@@ -79,22 +79,28 @@ class LocalCourseRepository implements CourseRepository {
     CourseChangeNotifier().notify();
   }
 
+  static const String _currentSemesterKey = 'currentSemesterId';
+
   @override
   Future<void> saveSemester(Semester semester) async {
-    // Semester persistence not yet implemented
-    // The semester is kept in memory during the session
+    await _courseDao.insertSemester(semester);
+    // Set this semester as current if it's the first or explicitly saved
+    final currentId = await _courseDao.getSetting(_currentSemesterKey);
+    if (currentId == null) {
+      await _courseDao.setSetting(_currentSemesterKey, semester.id);
+    }
   }
 
   @override
   Future<Semester?> getCurrentSemester() async {
-    // TODO: Implement semester persistence
-    return null;
+    final currentId = await _courseDao.getSetting(_currentSemesterKey);
+    if (currentId == null) return null;
+    return await _courseDao.getSemesterById(currentId);
   }
 
   @override
   Future<List<Semester>> getAllSemesters() async {
-    // TODO: Implement semester persistence
-    return [];
+    return await _courseDao.getAllSemesters();
   }
 
   /// Generate week schedule for a specific week
