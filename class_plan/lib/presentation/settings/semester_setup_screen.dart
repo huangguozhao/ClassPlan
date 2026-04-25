@@ -20,6 +20,7 @@ class _SemesterSetupScreenState extends ConsumerState<SemesterSetupScreen> {
   final _nameController = TextEditingController(text: '2025-2026学年第一学期');
   DateTime _startDate = DateTime.now();
   int _totalWeeks = 20;
+  String? _currentSemesterId; // 用于保存原有学期ID
 
   bool _isSaving = false;
 
@@ -37,6 +38,7 @@ class _SemesterSetupScreenState extends ConsumerState<SemesterSetupScreen> {
         _nameController.text = semester.name;
         _startDate = semester.startDate;
         _totalWeeks = semester.totalWeeks;
+        _currentSemesterId = semester.id;
       });
     }
   }
@@ -173,8 +175,9 @@ class _SemesterSetupScreenState extends ConsumerState<SemesterSetupScreen> {
 
     try {
       final repo = getIt<LocalCourseRepository>();
+      final semesterId = _currentSemesterId ?? _uuid.v4();
       final semester = Semester(
-        id: _uuid.v4(),
+        id: semesterId,
         name: _nameController.text.trim(),
         startDate: _startDate,
         endDate: _endDate,

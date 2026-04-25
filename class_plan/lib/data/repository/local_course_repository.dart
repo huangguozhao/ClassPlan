@@ -84,11 +84,8 @@ class LocalCourseRepository implements CourseRepository {
   @override
   Future<void> saveSemester(Semester semester) async {
     await _courseDao.insertSemester(semester);
-    // Set this semester as current if it's the first or explicitly saved
-    final currentId = await _courseDao.getSetting(_currentSemesterKey);
-    if (currentId == null) {
-      await _courseDao.setSetting(_currentSemesterKey, semester.id);
-    }
+    // Always set this semester as current when explicitly saved
+    await _courseDao.setSetting(_currentSemesterKey, semester.id);
   }
 
   @override
