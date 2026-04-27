@@ -13,12 +13,15 @@ class Course {
   final int? weekEnd;           // 结束周（如16）
   final List<int>? weeks;       // 具体周次列表（如[1,3,5]表示单周），若为null表示每周年年都有
   final String? colorHex;        // 课程颜色（用于UI区分）
+  /// 所属学期ID
+  final String semesterId;
   /// AI 解析返回的额外原始数据，用于课程详情展示
   final Map<String, dynamic>? extraData;
 
   Course({
     required this.id,
     required this.name,
+    required this.semesterId,
     this.teacher,
     this.location,
     required this.dayOfWeek,
@@ -51,6 +54,7 @@ class Course {
   Course copyWith({
     String? id,
     String? name,
+    String? semesterId,
     String? teacher,
     String? location,
     int? dayOfWeek,
@@ -65,6 +69,7 @@ class Course {
     return Course(
       id: id ?? this.id,
       name: name ?? this.name,
+      semesterId: semesterId ?? this.semesterId,
       teacher: teacher ?? this.teacher,
       location: location ?? this.location,
       dayOfWeek: dayOfWeek ?? this.dayOfWeek,

@@ -366,6 +366,9 @@ class _ManualEntryScreenState extends ConsumerState<ManualEntryScreen> {
     try {
       final repo = getIt<LocalCourseRepository>();
       final colorHex = '#${_selectedColor.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
+      // 获取当前学期ID
+      final currentSemester = await repo.getCurrentSemester();
+      final semesterId = currentSemester?.id ?? 'default';
 
       // 处理单双周
       List<int>? weeks;
@@ -382,6 +385,7 @@ class _ManualEntryScreenState extends ConsumerState<ManualEntryScreen> {
       final course = Course(
         id: _uuid.v4(),
         name: _nameController.text.trim(),
+        semesterId: semesterId,
         teacher: _teacherController.text.trim().isEmpty ? null : _teacherController.text.trim(),
         location: _locationController.text.trim().isEmpty ? null : _locationController.text.trim(),
         dayOfWeek: _selectedDay,

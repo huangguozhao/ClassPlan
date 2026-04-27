@@ -41,10 +41,15 @@ class CourseDao {
     return maps.map((map) => _fromMap(map)).toList();
   }
 
-  /// Get courses by semester (currently returns all, semester filtering not implemented)
+  /// Get courses by semester
   Future<List<Course>> getBySemester(String semesterId) async {
-    // TODO: Implement semester filtering when Course has semesterId
-    return getAll();
+    final db = await _dbHelper.database;
+    final maps = await db.query(
+      'courses',
+      where: 'semesterId = ?',
+      whereArgs: [semesterId],
+    );
+    return maps.map((map) => _fromMap(map)).toList();
   }
 
   /// Update a course
@@ -163,6 +168,7 @@ class CourseDao {
     return {
       'id': course.id,
       'name': course.name,
+      'semesterId': course.semesterId,
       'teacher': course.teacher,
       'location': course.location,
       'dayOfWeek': course.dayOfWeek,
@@ -191,6 +197,7 @@ class CourseDao {
     return Course(
       id: map['id'] as String,
       name: map['name'] as String,
+      semesterId: (map['semesterId'] as String?) ?? 'default',
       teacher: map['teacher'] as String?,
       location: map['location'] as String?,
       dayOfWeek: map['dayOfWeek'] as int,

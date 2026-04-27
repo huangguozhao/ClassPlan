@@ -57,11 +57,8 @@ class LocalCourseRepository implements CourseRepository {
 
   @override
   Future<List<Course>> getCoursesBySemester(String semesterId) async {
-    // TODO: Course model has no semesterId field, cannot filter precisely
-    // Sprint 1 temporary solution: return all courses
-    // Proper implementation requires course-semester relationship
     await _ensureInitialized();
-    return List.from(_courses);
+    return _courses.where((c) => c.semesterId == semesterId).toList();
   }
 
   @override

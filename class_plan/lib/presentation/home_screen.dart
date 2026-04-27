@@ -7,6 +7,7 @@ import 'import/import_flow_screen.dart';
 import 'import/ai_settings_screen.dart';
 import 'settings/semester_setup_screen.dart';
 import 'settings/course_management_screen.dart';
+import 'settings/course_color_settings_screen.dart';
 import 'settings/backup_screen.dart';
 import 'settings/reminder_settings_screen.dart';
 import 'debug/debug_log_screen.dart';
@@ -255,7 +256,12 @@ class SettingsScreen extends StatelessWidget {
             title: const Text('课程颜色'),
             subtitle: const Text('自定义各课程显示颜色'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () {},
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const CourseColorSettingsScreen()),
+              );
+            },
           ),
           const Divider(),
           ListTile(

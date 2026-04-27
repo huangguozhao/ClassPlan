@@ -6,6 +6,8 @@ import '../../data/repository/local_course_repository.dart';
 import '../../di/app_module.dart';
 import '../../domain/model/course.dart';
 import '../import/course_edit_screen.dart';
+import 'grid_settings_provider.dart';
+import 'grid_settings_bottom_sheet.dart';
 import 'weekly_schedule_state.dart';
 
 final weeklyScheduleProvider =
@@ -25,6 +27,11 @@ class WeeklyScheduleScreen extends ConsumerWidget {
         title: const Text('课表'),
         centerTitle: true,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.tune),
+            onPressed: () => showGridSettingsBottomSheet(context),
+            tooltip: '调整布局',
+          ),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
@@ -142,37 +149,44 @@ class _WeekNavigator extends StatelessWidget {
   }
 }
 
-class _WeekScheduleGrid extends StatelessWidget {
+class _WeekScheduleGrid extends ConsumerWidget {
   final WeeklyScheduleState state;
 
   const _WeekScheduleGrid({required this.state});
 
-@override
-  Widget build(BuildContext context) {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(gridSettingsProvider);
+    final cellSpacing = settings.cellSpacing;
+    final periodWidth = settings.periodColumnWidth;
+    final dayWidth = settings.dayColumnWidth;
+    final courseHeight = settings.courseCellHeight;
+    final emptyHeight = settings.emptyCellHeight;
+
     const dayNames = ['', '周一', '周二', '周三', '周四', '周五', '周六', '周日'];
     const periods = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-    const cellSpacing = 2.0;
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(cellSpacing),
+          padding: EdgeInsets.all(cellSpacing),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 节次列
               Column(
                 children: [
-                  _buildCell(context, '', isHeader: true, width: 40),
+                  _buildCell(context, '', isHeader: true, width: periodWidth),
                   ...periods.map((p) => Padding(
-                        padding: const EdgeInsets.only(top: cellSpacing),
+                        padding: EdgeInsets.only(top: cellSpacing),
                         child: _buildCell(
                           context,
                           '$p',
                           isHeader: false,
-                          width: 40,
+                          width: periodWidth,
                           isPeriodCell: true,
+                          emptyHeight: emptyHeight,
                         ),
                       )),
                 ],
@@ -180,27 +194,30 @@ class _WeekScheduleGrid extends StatelessWidget {
               // 周一~周日列
               for (int day = 1; day <= 7; day++) ...[
                 Padding(
-                  padding: const EdgeInsets.only(left: cellSpacing),
+                  padding: EdgeInsets.only(left: cellSpacing),
                   child: Column(
                     children: [
                       _buildCell(
                         context,
                         dayNames[day],
                         isHeader: true,
-                        width: 75,
+                        width: dayWidth,
                         isToday: _isToday(day),
+                        emptyHeight: emptyHeight,
                       ),
                       ...periods.map((period) {
                         final course = _findCourseAt(state, day, period);
                         return Padding(
-                          padding: const EdgeInsets.only(top: cellSpacing),
+                          padding: EdgeInsets.only(top: cellSpacing),
                           child: _buildCell(
                             context,
                             course?.name ?? '',
                             course: course,
                             isHeader: false,
-                            width: 75,
+                            width: dayWidth,
                             isToday: _isToday(day),
+                            courseHeight: courseHeight,
+                            emptyHeight: emptyHeight,
                           ),
                         );
                       }),
@@ -241,6 +258,8 @@ class _WeekScheduleGrid extends StatelessWidget {
     bool isToday = false,
     Course? course,
     required double width,
+    double? courseHeight,
+    double? emptyHeight,
   }) {
     final bgColor = isToday
         ? Colors.blue.shade50
@@ -252,7 +271,7 @@ class _WeekScheduleGrid extends StatelessWidget {
         onTap: () => _showCourseDetailDialog(context, course),
         child: Container(
           width: width,
-          height: 50,
+          height: courseHeight ?? 50,
           decoration: BoxDecoration(
             color: _courseColor(course),
             borderRadius: BorderRadius.circular(4),
@@ -285,7 +304,7 @@ class _WeekScheduleGrid extends StatelessWidget {
 
     return Container(
       width: width,
-      height: 44,
+      height: emptyHeight ?? (isHeader ? 20 : 44),
       decoration: BoxDecoration(
         color: bgColor,
         border: Border.all(color: Colors.grey.shade200, width: 0.5),

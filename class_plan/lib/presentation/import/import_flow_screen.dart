@@ -34,7 +34,7 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
   String? _rawText;
   List<StructuredCourse> _parsedCourses = [];
   String? _error;
-  bool _useRuleParser = false; // 默认使用 AI 解析
+  bool _useRuleParser = true; // 默认使用规则解析，更稳定
   String? _selectedAiProviderId;
   bool _aiServiceInitialized = false;
 
@@ -65,6 +65,10 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
       _aiService = service;
       _aiServiceInitialized = true;
       _selectedAiProviderId = service.selectedProviderId;
+      // 如果有已配置的 AI Provider，默认使用 AI 解析
+      if (service.isCurrentProviderConfigured) {
+        _useRuleParser = false;
+      }
     });
   }
 
@@ -669,6 +673,10 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
     try {
       final repo = getIt<LocalCourseRepository>();
       final uuid = const Uuid();
+      // 获取当前学期ID
+      final currentSemester = await repo.getCurrentSemester();
+      final semesterId = currentSemester?.id ?? 'default';
+
       // 使用有效课程（编辑后或原版）+ 拖拽放置的位置
       final courses = List.generate(_parsedCourses.length, (i) {
         final sc = _getEffectiveCourse(i);
@@ -677,6 +685,7 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
         return Course(
           id: uuid.v4(),
           name: sc.name,
+          semesterId: semesterId,
           teacher: sc.teacher,
           location: sc.location,
           dayOfWeek: placed?['dayOfWeek'] ?? sc.dayOfWeek ?? 1,

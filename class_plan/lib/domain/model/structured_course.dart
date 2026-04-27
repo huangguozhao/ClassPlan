@@ -32,10 +32,11 @@ class StructuredCourse {
   });
 
   /// 转换为领域模型 Course
-  Course toCourse(String id) {
+  Course toCourse(String id, String semesterId) {
     return Course(
       id: id,
       name: name,
+      semesterId: semesterId,
       teacher: teacher,
       location: location,
       dayOfWeek: dayOfWeek ?? 1,

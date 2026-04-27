@@ -96,6 +96,7 @@ class BackupService {
     return {
       'id': c.id,
       'name': c.name,
+      'semesterId': c.semesterId,
       'teacher': c.teacher,
       'location': c.location,
       'dayOfWeek': c.dayOfWeek,
@@ -112,6 +113,7 @@ class BackupService {
     return Course(
       id: json['id'] as String,
       name: json['name'] as String,
+      semesterId: json['semesterId'] as String? ?? 'default',
       teacher: json['teacher'] as String?,
       location: json['location'] as String?,
       dayOfWeek: json['dayOfWeek'] as int,
