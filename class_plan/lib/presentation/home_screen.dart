@@ -8,6 +8,9 @@ import 'import/ai_settings_screen.dart';
 import 'settings/semester_setup_screen.dart';
 import 'settings/course_management_screen.dart';
 import 'settings/course_color_settings_screen.dart';
+import 'settings/conflict_detection_screen.dart';
+import 'settings/schedule_export_screen.dart';
+import 'settings/theme_market_screen.dart';
 import 'settings/backup_screen.dart';
 import 'settings/reminder_settings_screen.dart';
 import 'debug/debug_log_screen.dart';
@@ -265,6 +268,32 @@ class SettingsScreen extends StatelessWidget {
           ),
           const Divider(),
           ListTile(
+            leading: const Icon(Icons.palette),
+            title: const Text('主题设置'),
+            subtitle: const Text('选择或自定义主题'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ThemeMarketScreen()),
+              );
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.warning_amber),
+            title: const Text('冲突检测'),
+            subtitle: const Text('检测时间/地点冲突'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ConflictDetectionScreen()),
+              );
+            },
+          ),
+          const Divider(),
+          ListTile(
             leading: const Icon(Icons.notifications),
             title: const Text('课程提醒'),
             subtitle: const Text('设置上课前提醒'),
@@ -286,6 +315,19 @@ class SettingsScreen extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const AiSettingsScreen()),
+              );
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.share),
+            title: const Text('导出课表'),
+            subtitle: const Text('生成图片分享'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ScheduleExportScreen()),
               );
             },
           ),

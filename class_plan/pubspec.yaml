@@ -48,6 +48,9 @@ dependencies:
   # 共享偏好（存储设置）
   shared_preferences: ^2.3.5
 
+  # 分享
+  share_plus: ^10.1.4
+
   # 本地通知（课程提醒）
   flutter_local_notifications: ^18.0.1
   timezone: ^0.10.1
