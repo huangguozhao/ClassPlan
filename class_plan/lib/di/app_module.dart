@@ -3,6 +3,7 @@ import 'package:get_it/get_it.dart';
 import '../data/repository/course_repository.dart';
 import '../data/repository/local_course_repository.dart';
 import '../data/backup/backup_service.dart';
+import '../data/widget/widget_data_service.dart';
 
 final getIt = GetIt.instance;
 
@@ -16,5 +17,10 @@ Future<void> setupDependencies() async {
   // BackupService - 需要 Repository
   getIt.registerFactory<BackupService>(
     () => BackupService(getIt<LocalCourseRepository>()),
+  );
+
+  // WidgetDataService - 需要 Repository
+  getIt.registerFactory<WidgetDataService>(
+    () => WidgetDataService(getIt<LocalCourseRepository>()),
   );
 }
