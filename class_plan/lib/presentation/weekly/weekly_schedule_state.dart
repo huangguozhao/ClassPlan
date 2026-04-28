@@ -15,6 +15,7 @@ class WeeklyScheduleState {
   final Map<int, List<Course>> coursesByDay;
   final bool isLoading;
   final Semester? semester;
+  final List<Semester> allSemesters;
 
   WeeklyScheduleState({
     required this.currentWeek,
@@ -23,6 +24,7 @@ class WeeklyScheduleState {
     required this.coursesByDay,
     this.isLoading = false,
     this.semester,
+    this.allSemesters = const [],
   });
 }
 
@@ -40,7 +42,6 @@ class WeeklyScheduleNotifier extends StateNotifier<WeeklyScheduleState> {
           isLoading: true,
         )) {
     _loadSchedule();
-    // 监听课程数据变化，自动刷新
     _subscription = CourseChangeNotifier().changes.listen((_) {
       _loadSchedule();
     });
@@ -54,6 +55,7 @@ class WeeklyScheduleNotifier extends StateNotifier<WeeklyScheduleState> {
 
   Future<void> _loadSchedule() async {
     final semester = await _repository.getCurrentSemester();
+    final allSemesters = await _repository.getAllSemesters();
     final now = DateTime.now();
     final week = semester?.currentWeek() ?? 1;
     final totalWeeks = semester?.totalWeeks ?? 20;
@@ -74,7 +76,21 @@ class WeeklyScheduleNotifier extends StateNotifier<WeeklyScheduleState> {
       coursesByDay: schedule.coursesByDay,
       isLoading: false,
       semester: semester,
+      allSemesters: allSemesters,
     );
+  }
+
+  Future<void> switchSemester(String semesterId) async {
+    final targetSemester = state.allSemesters.firstWhere(
+      (s) => s.id == semesterId,
+      orElse: () => state.semester!,
+    );
+
+    // 保存为当前学期
+    await _repository.saveSemester(targetSemester);
+
+    // 重新加载课表
+    await _loadSchedule();
   }
 
   void goToWeek(int week) {
@@ -93,7 +109,6 @@ class WeeklyScheduleNotifier extends StateNotifier<WeeklyScheduleState> {
   Future<void> _loadWeek(int week) async {
     var semester = state.semester ?? await _repository.getCurrentSemester();
     if (semester == null) {
-      // 没有学期配置时创建默认学期
       final now = DateTime.now();
       semester = Semester(
         id: 'default',
@@ -131,6 +146,7 @@ extension WeeklyScheduleStateCopyWith on WeeklyScheduleState {
     Map<int, List<Course>>? coursesByDay,
     bool? isLoading,
     Semester? semester,
+    List<Semester>? allSemesters,
   }) {
     return WeeklyScheduleState(
       currentWeek: currentWeek ?? this.currentWeek,
@@ -139,6 +155,7 @@ extension WeeklyScheduleStateCopyWith on WeeklyScheduleState {
       coursesByDay: coursesByDay ?? this.coursesByDay,
       isLoading: isLoading ?? this.isLoading,
       semester: semester ?? this.semester,
+      allSemesters: allSemesters ?? this.allSemesters,
     );
   }
 }

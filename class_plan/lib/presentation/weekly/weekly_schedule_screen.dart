@@ -76,33 +76,77 @@ class _WeekNavigator extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          IconButton(
-            icon: const Icon(Icons.chevron_left),
-            onPressed: state.currentWeek > 1
-                ? () => ref.read(weeklyScheduleProvider.notifier).previousWeek()
-                : null,
-          ),
-          GestureDetector(
-            onTap: () => _showWeekPicker(context),
-            child: Column(
-              children: [
-                Text(
-                  '第 ${state.currentWeek} 周',
-                  style: Theme.of(context).textTheme.titleMedium,
+          // 学期选择下拉
+          if (state.allSemesters.isNotEmpty)
+            PopupMenuButton<String>(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    state.semester?.name ?? '选择学期',
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                  const Icon(Icons.arrow_drop_down, size: 20),
+                ],
+              ),
+              onSelected: (semesterId) {
+                ref.read(weeklyScheduleProvider.notifier).switchSemester(semesterId);
+              },
+              itemBuilder: (context) => state.allSemesters.map((s) {
+                return PopupMenuItem<String>(
+                  value: s.id,
+                  child: Row(
+                    children: [
+                      if (s.id == state.semester?.id)
+                        const Icon(Icons.check, size: 16, color: Colors.green)
+                      else
+                        const SizedBox(width: 16),
+                      const SizedBox(width: 8),
+                      Text(s.name),
+                    ],
+                  ),
+                );
+              }).toList(),
+            )
+          else
+            const SizedBox(width: 80),
+
+          // 周导航
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.chevron_left),
+                onPressed: state.currentWeek > 1
+                    ? () => ref.read(weeklyScheduleProvider.notifier).previousWeek()
+                    : null,
+              ),
+              GestureDetector(
+                onTap: () => _showWeekPicker(context),
+                child: Column(
+                  children: [
+                    Text(
+                      '第 ${state.currentWeek} 周',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    Text(
+                      weekLabel,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
                 ),
-                Text(
-                  weekLabel,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.chevron_right),
+                onPressed: state.currentWeek < state.totalWeeks
+                    ? () => ref.read(weeklyScheduleProvider.notifier).nextWeek()
+                    : null,
+              ),
+            ],
           ),
-          IconButton(
-            icon: const Icon(Icons.chevron_right),
-            onPressed: state.currentWeek < state.totalWeeks
-                ? () => ref.read(weeklyScheduleProvider.notifier).nextWeek()
-                : null,
-          ),
+
+          // 空占位，保持居中
+          const SizedBox(width: 80),
         ],
       ),
     );

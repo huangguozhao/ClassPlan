@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="12dp"
+    android:padding="10dp"
     android:background="@android:color/white">
 
     <!-- 标题栏 -->
@@ -14,48 +14,116 @@
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
+        <TextView
+            android:id="@+id/widget_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="今日课表"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="#333333" />
+
+        <TextView
+            android:id="@+id/widget_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="周一 4月21日"
+            android:textSize="10sp"
+            android:textColor="#666666"
+            android:layout_marginEnd="4dp" />
+
+        <TextView
+            android:id="@+id/widget_week"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="第2周"
+            android:textSize="10sp"
+            android:textColor="#999999" />
+    </LinearLayout>
+
+    <!-- 下一节课倒计时区 -->
+    <LinearLayout
+        android:id="@+id/next_course_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingVertical="6dp"
+        android:layout_marginTop="4dp"
+        android:background="#F0F7FF"
+        android:paddingHorizontal="8dp">
+
+        <View
+            android:id="@+id/next_course_color"
+            android:layout_width="4dp"
+            android:layout_height="match_parent"
+            android:background="#5C6BC0" />
+
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:layout_marginStart="8dp">
 
             <TextView
-                android:id="@+id/widget_title"
+                android:id="@+id/next_course_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="30分钟后开始"
+                android:textSize="10sp"
+                android:textColor="#666666" />
+
+            <TextView
+                android:id="@+id/next_course_name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="今日课表"
+                android:text="高等数学"
                 android:textSize="14sp"
                 android:textStyle="bold"
-                android:textColor="#333333" />
+                android:textColor="#333333"
+                android:maxLines="1"
+                android:ellipsize="end" />
 
             <TextView
-                android:id="@+id/widget_date"
-                android:layout_width="match_parent"
+                android:id="@+id/next_course_info"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="周一 4月21日 第2周"
-                android:textSize="11sp"
-                android:textColor="#666666"
-                android:layout_marginTop="1dp" />
+                android:text="1-2节 · 教学楼A301"
+                android:textSize="10sp"
+                android:textColor="#999999" />
         </LinearLayout>
 
-        <ImageButton
-            android:id="@+id/widget_refresh"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:src="@android:drawable/ic_menu_rotate"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
-            android:contentDescription="刷新" />
+        <!-- 倒计时显示 -->
+        <TextView
+            android:id="@+id/next_course_countdown"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="30"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:textColor="#5C6BC0"
+            android:gravity="center" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="分钟"
+            android:textSize="10sp"
+            android:textColor="#999999"
+            android:layout_marginStart="2dp" />
     </LinearLayout>
 
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:background="#eeeeee"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="6dp" />
+        android:layout_marginTop="6dp"
+        android:layout_marginBottom="4dp" />
 
-    <!-- 课程列表 -->
+    <!-- 今日全部课程列表 -->
     <LinearLayout
         android:id="@+id/widget_courses_container"
         android:layout_width="match_parent"
@@ -71,23 +139,23 @@
             android:layout_weight="1"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:paddingVertical="3dp"
+            android:paddingVertical="2dp"
             android:visibility="gone">
 
             <View
                 android:id="@+id/course_1_color"
-                android:layout_width="4dp"
+                android:layout_width="3dp"
                 android:layout_height="match_parent"
-                android:background="#5C6BC0" />
+                android:background="#42A5F5" />
 
             <TextView
                 android:id="@+id/course_1_name"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:text="课程名"
-                android:textSize="12sp"
+                android:layout_marginStart="6dp"
+                android:text="大学英语"
+                android:textSize="11sp"
                 android:textColor="#333333"
                 android:maxLines="1"
                 android:ellipsize="end" />
@@ -96,10 +164,9 @@
                 android:id="@+id/course_1_info"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="1-2节"
-                android:textSize="10sp"
-                android:textColor="#999999"
-                android:layout_marginStart="8dp" />
+                android:text="3-4节"
+                android:textSize="9sp"
+                android:textColor="#999999" />
         </LinearLayout>
 
         <!-- 课程2 -->
@@ -110,23 +177,23 @@
             android:layout_weight="1"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:paddingVertical="3dp"
+            android:paddingVertical="2dp"
             android:visibility="gone">
 
             <View
                 android:id="@+id/course_2_color"
-                android:layout_width="4dp"
+                android:layout_width="3dp"
                 android:layout_height="match_parent"
-                android:background="#42A5F5" />
+                android:background="#26C6DA" />
 
             <TextView
                 android:id="@+id/course_2_name"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:text="课程名"
-                android:textSize="12sp"
+                android:layout_marginStart="6dp"
+                android:text="体育"
+                android:textSize="11sp"
                 android:textColor="#333333"
                 android:maxLines="1"
                 android:ellipsize="end" />
@@ -135,10 +202,9 @@
                 android:id="@+id/course_2_info"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="3-4节"
-                android:textSize="10sp"
-                android:textColor="#999999"
-                android:layout_marginStart="8dp" />
+                android:text="5-6节"
+                android:textSize="9sp"
+                android:textColor="#999999" />
         </LinearLayout>
 
         <!-- 课程3 -->
@@ -149,23 +215,23 @@
             android:layout_weight="1"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:paddingVertical="3dp"
+            android:paddingVertical="2dp"
             android:visibility="gone">
 
             <View
                 android:id="@+id/course_3_color"
-                android:layout_width="4dp"
+                android:layout_width="3dp"
                 android:layout_height="match_parent"
-                android:background="#26C6DA" />
+                android:background="#66BB6A" />
 
             <TextView
                 android:id="@+id/course_3_name"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:text="课程名"
-                android:textSize="12sp"
+                android:layout_marginStart="6dp"
+                android:text="线性代数"
+                android:textSize="11sp"
                 android:textColor="#333333"
                 android:maxLines="1"
                 android:ellipsize="end" />
@@ -174,10 +240,9 @@
                 android:id="@+id/course_3_info"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="5-6节"
-                android:textSize="10sp"
-                android:textColor="#999999"
-                android:layout_marginStart="8dp" />
+                android:text="7-8节"
+                android:textSize="9sp"
+                android:textColor="#999999" />
         </LinearLayout>
 
         <!-- 课程4 -->
@@ -188,23 +253,23 @@
             android:layout_weight="1"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:paddingVertical="3dp"
+            android:paddingVertical="2dp"
             android:visibility="gone">
 
             <View
                 android:id="@+id/course_4_color"
-                android:layout_width="4dp"
+                android:layout_width="3dp"
                 android:layout_height="match_parent"
-                android:background="#66BB6A" />
+                android:background="#FFCA28" />
 
             <TextView
                 android:id="@+id/course_4_name"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:text="课程名"
-                android:textSize="12sp"
+                android:layout_marginStart="6dp"
+                android:text="数据结构"
+                android:textSize="11sp"
                 android:textColor="#333333"
                 android:maxLines="1"
                 android:ellipsize="end" />
@@ -213,10 +278,9 @@
                 android:id="@+id/course_4_info"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="7-8节"
-                android:textSize="10sp"
-                android:textColor="#999999"
-                android:layout_marginStart="8dp" />
+                android:text="9-10节"
+                android:textSize="9sp"
+                android:textColor="#999999" />
         </LinearLayout>
     </LinearLayout>
 
@@ -227,7 +291,7 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:text="今日无课"
-        android:textSize="13sp"
+        android:textSize="12sp"
         android:textColor="#999999"
         android:gravity="center"
         android:visibility="gone" />
