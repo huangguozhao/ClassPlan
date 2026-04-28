@@ -166,65 +166,92 @@ class _WeekScheduleGrid extends ConsumerWidget {
     const dayNames = ['', '周一', '周二', '周三', '周四', '周五', '周六', '周日'];
     const periods = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
+    // 检查某天某节次是否有课程开始
+    bool isCourseStartAt(int day, int period) {
+      final dayCourses = state.coursesByDay[day] ?? [];
+      return dayCourses.any((c) => c.startPeriod == period);
+    }
+
+    // 检查某天某节次是否有课程（用于判断是否显示课程卡片）
+    Course? findCourseAt(int day, int period) {
+      final dayCourses = state.coursesByDay[day] ?? [];
+      for (final course in dayCourses) {
+        if (period >= course.startPeriod && period <= course.endPeriod) {
+          return course;
+        }
+      }
+      return null;
+    }
+
+    // 计算某天某课程占用的行数
+    int courseRowSpan(int day, Course course) {
+      return course.endPeriod - course.startPeriod + 1;
+    }
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: SingleChildScrollView(
         child: Padding(
           padding: EdgeInsets.all(cellSpacing),
-          child: Row(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 节次列
-              Column(
+              // 表头行
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildCell(context, '', isHeader: true, width: periodWidth),
-                  ...periods.map((p) => Padding(
-                        padding: EdgeInsets.only(top: cellSpacing),
-                        child: _buildCell(
-                          context,
-                          '$p',
-                          isHeader: false,
-                          width: periodWidth,
-                          isPeriodCell: true,
-                          emptyHeight: emptyHeight,
-                        ),
-                      )),
-                ],
-              ),
-              // 周一~周日列
-              for (int day = 1; day <= 7; day++) ...[
-                Padding(
-                  padding: EdgeInsets.only(left: cellSpacing),
-                  child: Column(
-                    children: [
-                      _buildCell(
+                  _buildHeaderCell(context, '', periodWidth),
+                  for (int day = 1; day <= 7; day++)
+                    Padding(
+                      padding: EdgeInsets.only(left: cellSpacing),
+                      child: _buildHeaderCell(
                         context,
                         dayNames[day],
-                        isHeader: true,
-                        width: dayWidth,
+                        dayWidth,
                         isToday: _isToday(day),
-                        emptyHeight: emptyHeight,
                       ),
-                      ...periods.map((period) {
-                        final course = _findCourseAt(state, day, period);
-                        return Padding(
-                          padding: EdgeInsets.only(top: cellSpacing),
-                          child: _buildCell(
+                    ),
+                ],
+              ),
+              // 课表内容行
+              ...List.generate(periods.length, (index) {
+                final period = periods[index];
+                // 检查这行在所有天中是否有课程开始
+                bool hasCourseStart = false;
+                for (int day = 1; day <= 7; day++) {
+                  if (isCourseStartAt(day, period)) {
+                    hasCourseStart = true;
+                    break;
+                  }
+                }
+                // 如果有课程开始，使用 courseHeight；否则使用 emptyHeight
+                final rowHeight = hasCourseStart ? courseHeight : emptyHeight;
+
+                return Padding(
+                  padding: EdgeInsets.only(top: cellSpacing),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 节次列
+                      _buildPeriodCell(context, '$period', periodWidth, rowHeight),
+                      // 周一~周日
+                      for (int day = 1; day <= 7; day++)
+                        Padding(
+                          padding: EdgeInsets.only(left: cellSpacing),
+                          child: _buildDayCell(
                             context,
-                            course?.name ?? '',
-                            course: course,
-                            isHeader: false,
-                            width: dayWidth,
-                            isToday: _isToday(day),
-                            courseHeight: courseHeight,
-                            emptyHeight: emptyHeight,
+                            day,
+                            period,
+                            dayWidth,
+                            rowHeight,
+                            findCourseAt,
+                            courseRowSpan,
                           ),
-                        );
-                      }),
+                        ),
                     ],
                   ),
-                ),
-              ],
+                );
+              }),
             ],
           ),
         ),
@@ -240,38 +267,71 @@ class _WeekScheduleGrid extends ConsumerWidget {
     return now.weekday == day && isInWeek;
   }
 
-  Course? _findCourseAt(WeeklyScheduleState state, int day, int period) {
-    final dayCourses = state.coursesByDay[day] ?? [];
-    for (final course in dayCourses) {
-      if (period >= course.startPeriod && period <= course.endPeriod) {
-        return course;
-      }
-    }
-    return null;
+  Widget _buildHeaderCell(
+    BuildContext context,
+    String text,
+    double width, {
+    bool isToday = false,
+  }) {
+    return Container(
+      width: width,
+      height: 24,
+      decoration: BoxDecoration(
+        color: isToday ? Colors.blue.shade50 : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        text,
+        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+      ),
+    );
   }
 
-  Widget _buildCell(
+  Widget _buildPeriodCell(
     BuildContext context,
-    String text, {
-    bool isHeader = false,
-    bool isPeriodCell = false,
-    bool isToday = false,
-    Course? course,
-    required double width,
-    double? courseHeight,
-    double? emptyHeight,
-  }) {
-    final bgColor = isToday
-        ? Colors.blue.shade50
-        : (isHeader ? Colors.grey.shade100 : Colors.white);
-    final textColor = isHeader ? Colors.black87 : Colors.black54;
+    String text,
+    double width,
+    double height,
+  ) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        border: Border.all(color: Colors.grey.shade200, width: 0.5),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        text,
+        style: const TextStyle(fontSize: 12, color: Colors.black54),
+      ),
+    );
+  }
 
-    if (course != null) {
+  Widget _buildDayCell(
+    BuildContext context,
+    int day,
+    int period,
+    double width,
+    double rowHeight,
+    Course? Function(int, int) findCourse,
+    int Function(int, Course) getRowSpan,
+  ) {
+    final course = findCourse(day, period);
+    final isCourseStart = course != null && course.startPeriod == period;
+
+    if (course != null && isCourseStart) {
+      // 这是课程开始行，渲染课程卡片
+      final rowSpan = getRowSpan(day, course);
+      final courseHeight = rowSpan * 50.0; // 每节次 50px
+
       return GestureDetector(
         onTap: () => _showCourseDetailDialog(context, course),
         child: Container(
           width: width,
-          height: courseHeight ?? 50,
+          height: courseHeight,
           decoration: BoxDecoration(
             color: _courseColor(course),
             borderRadius: BorderRadius.circular(4),
@@ -282,7 +342,11 @@ class _WeekScheduleGrid extends ConsumerWidget {
             children: [
               Text(
                 course.name,
-                style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -302,21 +366,13 @@ class _WeekScheduleGrid extends ConsumerWidget {
       );
     }
 
+    // 非课程行的空单元格
     return Container(
       width: width,
-      height: emptyHeight ?? (isHeader ? 20 : 44),
+      height: rowHeight,
       decoration: BoxDecoration(
-        color: bgColor,
+        color: _isToday(day) ? Colors.blue.shade50 : Colors.white,
         border: Border.all(color: Colors.grey.shade200, width: 0.5),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: isHeader ? 12 : 10,
-          fontWeight: isHeader ? FontWeight.w600 : FontWeight.normal,
-          color: textColor,
-        ),
       ),
     );
   }
